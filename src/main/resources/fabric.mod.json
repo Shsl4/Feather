@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "id": "feather",
+  "version": "${version}",
+  "name": "Feather",
+  "description": "",
+  "authors": [],
+  "contact": {},
+  "license": "MIT",
+  "icon": "assets/Feather/icon.png",
+  "environment": "*",
+  "entrypoints": {
+    "client": [
+      "dev.sl4sh.feather.client.FeatherClient"
+    ],
+    "main": [
+      "dev.sl4sh.feather.Feather"
+    ]
+  },
+  "mixins": [
+    "Feather.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=0.11.7",
+    "fabric": "*",
+    "minecraft": "1.17.1"
+  }
+}
