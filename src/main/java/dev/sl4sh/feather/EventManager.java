@@ -1,72 +1,73 @@
 package dev.sl4sh.feather;
 
-import dev.sl4sh.feather.callbacks.PlayerConnectedCallback;
-import dev.sl4sh.feather.callbacks.PlayerConnectingCallback;
-import dev.sl4sh.feather.events.PlayerConnectedEvent;
-import dev.sl4sh.feather.events.PlayerConnectingEvent;
+import dev.sl4sh.feather.listener.FeatherCallback;
 import dev.sl4sh.feather.listener.FeatherEvent;
 import dev.sl4sh.feather.listener.Listener;
+import net.fabricmc.fabric.api.event.Event;
+import net.fabricmc.fabric.api.event.EventFactory;
 
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.lang.invoke.LambdaMetafactory;
+import java.lang.invoke.*;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.Callable;
+import java.util.*;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
+@SuppressWarnings("unchecked")
 public class EventManager {
 
-    private static boolean initiated = false;
+    private static boolean initialized = false;
+    private static final Map<Class<? extends FeatherEvent>, Event<FeatherCallback>> callbacks = new HashMap<>();
 
-    private static void registerEvent(Class<?> from, Method method){
+    public static Map<Class<? extends FeatherEvent>, Event<FeatherCallback>> getCallbacks(){
+        return callbacks;
+    }
 
-        if (from.equals(PlayerConnectingEvent.class)){
+    public static void registerEvent(Class<? extends FeatherEvent> forClass, Method method) {
 
-            PlayerConnectingCallback.EVENT.register((event -> {
+        getOrCreateEvent(forClass).register((event) -> {
 
-                try {
+            try {
+                method.invoke(null, event);
+            } catch (Throwable e) {
+                e.printStackTrace();
+            }
 
-                    method.invoke(null, event);
-
-                } catch (IllegalAccessException | InvocationTargetException ignored) {
-                }
-
-            }));
-
-        }
-        else if(from.equals(PlayerConnectedEvent.class)){
-
-            PlayerConnectedCallback.EVENT.register((event -> {
-
-                try {
-                    method.invoke(null, event);
-
-                } catch (IllegalAccessException | InvocationTargetException ignored) {
-                }
-
-            }));
-
-        }
-        else{
-
-            Feather.getLogger().error("Unknown callback received: " + from.getName());
-            return;
-
-        }
+        });
 
         Feather.getLogger().info("Registered " + method.getName() + " listener.");
 
     }
 
+    public static Event<FeatherCallback> getOrCreateEvent(Class<? extends FeatherEvent> eventClass){
+
+        if(getCallbacks().containsKey(eventClass)){
+
+            return getCallbacks().get(eventClass);
+
+        }
+
+        Event<FeatherCallback> callback = EventFactory.createArrayBacked(FeatherCallback.class, (listeners) -> (event) -> {
+
+            for (FeatherCallback listener : listeners){
+
+                listener.execute(event);
+
+            }
+
+        });
+
+        callbacks.put(eventClass, callback);
+        return callback;
+    }
+
     public static void init(){
 
-        if(initiated){
-            throw new IllegalStateException("EventManager should not be initiated more that once.");
+        if(initialized){
+            throw new IllegalStateException("EventManager should not be initialized more that once.");
         }
 
         List<Method> methods = getListenerMethods();
@@ -101,11 +102,17 @@ public class EventManager {
 
             }
 
-            registerEvent(eventClass, method);
+            Class<? extends FeatherEvent> evClass = (Class<? extends FeatherEvent>)method.getParameterTypes()[0];
+
+            try {
+                registerEvent(evClass, method);
+            } catch (Throwable throwable) {
+                throwable.printStackTrace();
+            }
 
         }
 
-        initiated = true;
+        initialized = true;
 
     }
 
@@ -132,7 +139,7 @@ public class EventManager {
 
     private static List<Method> getListenerMethods(){
 
-        List<Method> methods = new ArrayList<Method>();
+        List<Method> methods = new ArrayList<>();
 
         Set<Class<?>> classes = getAllClasses("dev.sl4sh.feather");
 

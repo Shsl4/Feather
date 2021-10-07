@@ -1,6 +1,6 @@
 package dev.sl4sh.feather.listener;
 
-public class FeatherCancellableEvent implements FeatherEvent {
+public class CancellableEvent implements FeatherEvent {
 
     private boolean cancelled = false;
     private String cancelReason = "";

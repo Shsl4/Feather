@@ -1,21 +1,21 @@
 package dev.sl4sh.feather.events;
 
-import dev.sl4sh.feather.listener.FeatherCancellableEvent;
-import net.minecraft.network.ClientConnection;
+import dev.sl4sh.feather.listener.FeatherEvent;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 
-public class PlayerConnectingEvent extends FeatherCancellableEvent {
+/**
+ *  <p> Event called before a player has disconnected from the server. </p>
+ */
+public class PlayerPreDisconnectEvent implements FeatherEvent {
 
     private final ServerPlayerEntity player;
     private final MinecraftServer server;
-    private final ClientConnection connection;
 
-    public PlayerConnectingEvent(ClientConnection connection, ServerPlayerEntity player){
+    public PlayerPreDisconnectEvent(ServerPlayerEntity player){
 
         this.player = player;
         this.server = player.server;
-        this.connection = connection;
 
     }
 
@@ -25,10 +25,6 @@ public class PlayerConnectingEvent extends FeatherCancellableEvent {
 
     public MinecraftServer getServer() {
         return server;
-    }
-
-    public ClientConnection getConnection() {
-        return connection;
     }
 
 }

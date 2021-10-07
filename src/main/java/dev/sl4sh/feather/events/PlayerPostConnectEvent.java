@@ -1,24 +1,21 @@
 package dev.sl4sh.feather.events;
 
-import dev.sl4sh.feather.listener.FeatherCancellableEvent;
 import dev.sl4sh.feather.listener.FeatherEvent;
 import net.minecraft.network.ClientConnection;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 
 /**
- *  <p> Event called AFTER a player has connected to the server. </p>
+ *  <p> Event called after a player has connected to the server. </p>
  */
-public class PlayerConnectedEvent implements FeatherEvent {
+public class PlayerPostConnectEvent implements FeatherEvent {
 
     private final ServerPlayerEntity player;
-    private final MinecraftServer server;
     private final ClientConnection connection;
 
-    public PlayerConnectedEvent(ClientConnection connection, ServerPlayerEntity player){
+    public PlayerPostConnectEvent(ClientConnection connection, ServerPlayerEntity player){
 
         this.player = player;
-        this.server = player.server;
         this.connection = connection;
 
     }
@@ -28,7 +25,7 @@ public class PlayerConnectedEvent implements FeatherEvent {
     }
 
     public MinecraftServer getServer() {
-        return server;
+        return player.getServer();
     }
 
     public ClientConnection getConnection() {
