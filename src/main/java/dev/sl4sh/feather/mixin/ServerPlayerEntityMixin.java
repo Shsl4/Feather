@@ -7,7 +7,6 @@ import net.minecraft.entity.Entity;
 import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.ActionResult;
 import net.minecraft.util.math.Vec2f;
 import net.minecraft.util.math.Vec3d;
 import org.spongepowered.asm.mixin.Mixin;
@@ -40,6 +39,33 @@ public class ServerPlayerEntityMixin {
         if(event.isCancelled()){
             info.cancel();
         }
+
+    }
+
+    @Inject(at = @At(value = "HEAD"), method = "requestTeleport", cancellable = true)
+    public void preRequestTeleport(double destX, double destY, double destZ, CallbackInfo info){
+
+        ServerPlayerEntity player = Utilities.as(this);
+        PlayerPreTeleportEvent event = new PlayerPreTeleportEvent(player, new Vec3d(destX, destY, destZ),
+                new Vec2f(player.getRoll(), player.getPitch()));
+        EventManager.getOrCreateEvent(PlayerPreTeleportEvent.class).invoker().execute(event);
+
+        if(event.isCancelled()){
+            info.cancel();
+        }
+
+
+    }
+
+    @Inject(at = @At(value = "TAIL"), method = "requestTeleport")
+    public void postRequestTeleport(double destX, double destY, double destZ, CallbackInfo info){
+
+        ServerPlayerEntity player = Utilities.as(this);
+
+        PlayerPostTeleportEvent event = new PlayerPostTeleportEvent(player, new Vec3d(destX, destY, destZ),
+                new Vec2f(player.getRoll(), player.getPitch()));
+        EventManager.getOrCreateEvent(PlayerPostTeleportEvent.class).invoker().execute(event);
+
 
     }
 

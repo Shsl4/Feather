@@ -1,35 +1,48 @@
 package dev.sl4sh.feather;
 
 import dev.sl4sh.feather.events.*;
+import dev.sl4sh.feather.items.debug.LineDrawer;
+import dev.sl4sh.feather.items.tools.HammerTool;
+import dev.sl4sh.feather.client.linerenderer.LineRenderer;
 import dev.sl4sh.feather.listener.Listener;
 import dev.sl4sh.feather.util.Utilities;
-import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.mob.CreeperEntity;
-import net.minecraft.text.LiteralText;
-import net.minecraft.text.Style;
-import net.minecraft.util.ActionResult;
 import net.fabricmc.api.ModInitializer;
+import net.fabricmc.fabric.api.client.itemgroup.FabricItemGroupBuilder;
+import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
+import net.minecraft.entity.Entity;
+import net.minecraft.item.ItemGroup;
+import net.minecraft.item.ItemStack;
+import net.minecraft.item.Items;
+import net.minecraft.text.LiteralText;
+import net.minecraft.util.Identifier;
 import net.minecraft.util.math.Vec3d;
+import net.minecraft.util.math.Vec3f;
+import net.minecraft.util.math.Vec3i;
+import net.minecraft.util.registry.Registry;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.util.Random;
 import java.util.UUID;
 
-@Environment(EnvType.SERVER)
+//@Environment(EnvType.SERVER)
 public class Feather implements ModInitializer {
 
     public static Logger getLogger() { return LOGGER; }
 
     private static final Logger LOGGER = LogManager.getLogger("Feather");
 
+    public static final HammerTool HAMMER_TOOL = new HammerTool();
+    public static final LineDrawer LINE_DRAWER = new LineDrawer();
+
+    public static final ItemGroup FEATHER_ITEM_GROUP = FabricItemGroupBuilder.build(
+            new Identifier("feather", "general"),
+            () -> new ItemStack(Items.NETHER_STAR));
+
     @Listener
     public static void onTeleport(PlayerPreTeleportEvent event){
 
-        Vec3d pos = event.getPosition();
-        getLogger().info("Teleported {} at {}, {}, {}", event.getPlayer().getName().getString(), pos.x, pos.y, pos.z);
+        event.setCancelled(true, "Because I want to");
+        event.getPlayer().sendSystemMessage(new LiteralText("\u00A7cYou are not allowed to teleport."), UUID.randomUUID());
 
     }
 
@@ -92,6 +105,13 @@ public class Feather implements ModInitializer {
         getLogger().info("World after respawn " + Utilities.getWorldDimensionName(event.getWorld()));
     }
 
+    public static Vec3f toVec3f(Vec3i vec){
+        return new Vec3f(vec.getX(), vec.getY(), vec.getZ());
+    }
+    public static Vec3f toVec3f(Vec3d vec){
+        return new Vec3f((float)vec.getX(), (float)vec.getY(), (float)vec.getZ());
+    }
+
     @Override
     public void onInitialize() {
 
@@ -99,7 +119,22 @@ public class Feather implements ModInitializer {
 
         EventManager.init();
 
+        WorldRenderEvents.BEFORE_DEBUG_RENDER.register(ctx -> {
+            Vec3d pos = ctx.camera().getPos();
+
+            if(ctx.consumers() != null) {
+
+                LineRenderer.INSTANCE.render(ctx.matrixStack(), ctx.consumers(), pos.x, pos.y, pos.z);
+
+            }
+
+        });
+
+        Registry.register(Registry.ITEM, new Identifier("feather", "hammer"), HAMMER_TOOL);
+        Registry.register(Registry.ITEM, new Identifier("feather", "line_drawer"), LINE_DRAWER);
+
     }
+
 
 
 }

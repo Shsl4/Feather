@@ -1,0 +1,20 @@
+PlayerManager:
+onPlayerConnect
+onPlayerDisconnect
+onPlayerChat
+
+PlayerEntity:
+onDeath
+onRespawn
+
+
+Explosion Management
+
+Boots to walk on water
+Speed boots
+Chainsaw
+Drawers
+Custom furnaces
+
+Automated Crafting / furnace
+Pipe sorting
