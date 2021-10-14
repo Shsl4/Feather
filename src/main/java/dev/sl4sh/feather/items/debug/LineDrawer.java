@@ -1,8 +1,9 @@
 package dev.sl4sh.feather.items.debug;
 
 import dev.sl4sh.feather.Feather;
-import dev.sl4sh.feather.client.linerenderer.Line;
-import dev.sl4sh.feather.client.linerenderer.LineRenderer;
+import dev.sl4sh.feather.client.rendering.linerenderer.Line;
+import dev.sl4sh.feather.client.rendering.linerenderer.LineRenderer;
+import dev.sl4sh.feather.util.Utilities;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
@@ -19,7 +20,9 @@ public class LineDrawer extends Item {
 
     public static BlockHitResult drawRaycast(World world, PlayerEntity player, RaycastContext.FluidHandling fluidHandling) {
         BlockHitResult result = raycast(world, player, fluidHandling);
-        LineRenderer.drawLine(new Line(Feather.toVec3f(player.getEyePos()), Feather.toVec3f(result.getBlockPos()), Line.Color.random(), 1.0f));
+        if(world.isClient()){
+            LineRenderer.INSTANCE.drawLine(new Line(Utilities.toVec3f(player.getEyePos()), Utilities.toVec3f(result.getBlockPos()), Line.Color.random(), 1.0f));
+        }
         return result;
     }
 

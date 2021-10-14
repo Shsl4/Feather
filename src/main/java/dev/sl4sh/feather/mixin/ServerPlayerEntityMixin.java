@@ -1,7 +1,7 @@
 package dev.sl4sh.feather.mixin;
 
-import dev.sl4sh.feather.EventManager;
-import dev.sl4sh.feather.events.*;
+import dev.sl4sh.feather.Feather;
+import dev.sl4sh.feather.event.player.*;
 import dev.sl4sh.feather.util.Utilities;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.damage.DamageSource;
@@ -22,7 +22,7 @@ public class ServerPlayerEntityMixin {
     public void onDeath(DamageSource source, CallbackInfo info) {
 
         PlayerPostDeathEvent event = new PlayerPostDeathEvent(Utilities.as(this), source);
-        EventManager.getOrCreateEvent(PlayerPostDeathEvent.class).invoker().execute(event);
+        Feather.getEventRegistry().POST_DEATH.invoke(event);
 
     }
 
@@ -34,7 +34,7 @@ public class ServerPlayerEntityMixin {
         Vec2f rot = player.getRotationClient();
 
         PlayerPreDimensionChangeEvent event = new PlayerPreDimensionChangeEvent(destination, player, pos, rot);
-        EventManager.getOrCreateEvent(PlayerPreDimensionChangeEvent.class).invoker().execute(event);
+        Feather.getEventRegistry().PRE_DIM_CHANGE.invoke(event);
 
         if(event.isCancelled()){
             info.cancel();
@@ -48,7 +48,7 @@ public class ServerPlayerEntityMixin {
         ServerPlayerEntity player = Utilities.as(this);
         PlayerPreTeleportEvent event = new PlayerPreTeleportEvent(player, new Vec3d(destX, destY, destZ),
                 new Vec2f(player.getRoll(), player.getPitch()));
-        EventManager.getOrCreateEvent(PlayerPreTeleportEvent.class).invoker().execute(event);
+        Feather.getEventRegistry().PRE_TELEPORT.invoke(event);
 
         if(event.isCancelled()){
             info.cancel();
@@ -64,7 +64,7 @@ public class ServerPlayerEntityMixin {
 
         PlayerPostTeleportEvent event = new PlayerPostTeleportEvent(player, new Vec3d(destX, destY, destZ),
                 new Vec2f(player.getRoll(), player.getPitch()));
-        EventManager.getOrCreateEvent(PlayerPostTeleportEvent.class).invoker().execute(event);
+        Feather.getEventRegistry().POST_TELEPORT.invoke(event);
 
 
     }
@@ -77,7 +77,7 @@ public class ServerPlayerEntityMixin {
         Vec2f rot = player.getRotationClient();
 
         PlayerPostDimensionChangeEvent event = new PlayerPostDimensionChangeEvent(player, pos, rot);
-        EventManager.getOrCreateEvent(PlayerPostDimensionChangeEvent.class).invoker().execute(event);
+        Feather.getEventRegistry().POST_DIM_CHANGE.invoke(event);
 
     }
 
@@ -85,7 +85,7 @@ public class ServerPlayerEntityMixin {
     public void onPreTeleport(ServerWorld targetWorld, double x, double y, double z, float yaw, float pitch, CallbackInfo info){
 
         PlayerPreTeleportEvent event = new PlayerPreTeleportEvent(Utilities.as(this), new Vec3d(x, y, z), new Vec2f(yaw, pitch));
-        EventManager.getOrCreateEvent(PlayerPreTeleportEvent.class).invoker().execute(event);
+        Feather.getEventRegistry().PRE_TELEPORT.invoke(event);
 
         if(event.isCancelled()){
             info.cancel();
@@ -97,7 +97,8 @@ public class ServerPlayerEntityMixin {
     public void onPostTeleport(ServerWorld targetWorld, double x, double y, double z, float yaw, float pitch, CallbackInfo info){
 
         PlayerPostTeleportEvent event = new PlayerPostTeleportEvent(Utilities.as(this), new Vec3d(x, y, z), new Vec2f(yaw, pitch));
-        EventManager.getOrCreateEvent(PlayerPostTeleportEvent.class).invoker().execute(event);
+        Feather.getEventRegistry().POST_TELEPORT.invoke(event);
+
 
     }
 

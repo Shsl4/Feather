@@ -5,8 +5,11 @@
   "compatibilityLevel": "JAVA_16",
   "mixinPriority": -50,
   "mixins": [
+    "CommandManagerMixin",
+    "DebugRendererMixin",
     "ItemMixin",
     "ItemStackMixin",
+    "MinecraftClientMixin",
     "PlayerManagerMixin",
     "ServerPlayerEntityMixin",
     "ServerPlayerInteractionManagerMixin"

@@ -32,7 +32,6 @@ public class ServerPlayerInteractionManagerMixin {
     @Shadow @Mutable
     private GameMode gameMode;
 
-
     @Inject(at = @At(value = "HEAD"), method = "tryBreakBlock", cancellable = true)
     public void tryBreakBlock(BlockPos pos, CallbackInfoReturnable<Boolean> info) {
         BlockState blockState = this.world.getBlockState(pos);
