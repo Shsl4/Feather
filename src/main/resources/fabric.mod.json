@@ -13,6 +13,9 @@
     "client": [
       "dev.sl4sh.feather.client.FeatherClient"
     ],
+    "server": [
+      "dev.sl4sh.feather.server.FeatherServer"
+    ],
     "main": [
       "dev.sl4sh.feather.Feather"
     ]

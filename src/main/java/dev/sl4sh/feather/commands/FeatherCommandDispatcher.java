@@ -4,6 +4,13 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.tree.LiteralCommandNode;
 import dev.sl4sh.feather.Feather;
+import net.fabricmc.fabric.impl.gametest.FabricGameTestModInitializer;
+import net.fabricmc.fabric.impl.resource.loader.FabricModResourcePack;
+import net.fabricmc.loader.FabricLoader;
+import net.fabricmc.loader.entrypoint.minecraft.hooks.EntrypointServer;
+import net.fabricmc.loader.launch.FabricTweaker;
+import net.fabricmc.loader.launch.common.FabricLauncher;
+import net.fabricmc.loader.launch.common.FabricMixinBootstrap;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 
@@ -16,24 +23,9 @@ public class FeatherCommandDispatcher extends CommandDispatcher<ServerCommandSou
     @Override
     public LiteralCommandNode<ServerCommandSource> register(final LiteralArgumentBuilder<ServerCommandSource> command) {
 
-        if(!CommandProcessor.MINECRAFT_COMMANDS.contains(command.getLiteral())){
-
-            Feather.getLogger().error("Feather only supports registering default minecraft commands using " +
-                    "FeatherCommandDispatcher#register(LiteralArgumentBuilder<ServerCommandSource>). Use " +
-                    "FeatherCommandDispatcher#register(String, LiteralArgumentBuilder<ServerCommandSource>) instead.");
-            return null;
-
-        }
-
         final var build = command.build();
-        final var alias = CommandManager.literal("minecraft:" + command.getLiteral()).redirect(build).build();
-
-        Feather.getLogger().info("Registering command {} with alias {}", build.getLiteral(), alias.getLiteral());
-
         getRoot().addChild(build);
-        getRoot().addChild(alias);
-
-        Feather.getPermissionManager().setupCommandPermission(alias.getLiteral());
+        Feather.getPermissionManager().setupCommandPermission(build.getLiteral());
 
         return build;
 
@@ -59,6 +51,10 @@ public class FeatherCommandDispatcher extends CommandDispatcher<ServerCommandSou
 
         var build = command.build();
         final var alias = CommandManager.literal(prefix + ":" + command.getLiteral()).redirect(build).build();
+
+        Feather.getLogger().info(Thread.currentThread().getStackTrace()[2].getClassName() + " is registering " + command.getLiteral());
+
+        var l = getClass().getClassLoader().getResourceAsStream("fabric.mod.json");
 
         getRoot().addChild(build);
         getRoot().addChild(alias);

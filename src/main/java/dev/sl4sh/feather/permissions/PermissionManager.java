@@ -1,6 +1,8 @@
 package dev.sl4sh.feather.permissions;
 
 import dev.sl4sh.feather.Feather;
+import net.fabricmc.loader.FabricLoader;
+import net.fabricmc.loader.launch.FabricTweaker;
 import net.minecraft.server.network.ServerPlayerEntity;
 
 import java.util.ArrayList;
@@ -18,6 +20,8 @@ public class PermissionManager {
         return permissions.stream().filter(perm -> perm.getId().equals(id)).findFirst();
     }
 
+    public List<Permission> getPermissions() { return new ArrayList<>(permissions); }
+
     public void setupCommandPermission(String command){
 
         Optional<Permission> permission = Feather.getDatabaseManager().loadPermission(command);
@@ -26,15 +30,20 @@ public class PermissionManager {
 
     }
 
-    public String makeCommandId(String command){
+    private String makeCommandId(String command){
 
-        String[] parts = command.split(":");
-
-        if (parts.length != 2){
-            throw new IllegalStateException("Invalid command name " + command);
+        if(command.contains(":")){
+            String[] spl = command.split(":");
+            return spl[0] + ".command." + spl[1];
         }
 
-        return parts[0] + ".command." + parts[1];
+        return "command." + command;
+
+    }
+
+    public Optional<String> getCommandPermission(String command){
+
+        return permissions.stream().filter(p -> p.getId().contains(command)).findFirst().map(Permission::getId);
 
     }
 
@@ -46,15 +55,18 @@ public class PermissionManager {
         return groups.stream().filter(group -> group.isMember(userID)).collect(Collectors.toList());
     }
 
-
-    public boolean playerHasPermission(String permission, ServerPlayerEntity player){
-        boolean b1 = getUserGroups(player).stream().anyMatch(group -> groupHasPermission(permission, group));
-        boolean b2 = getPermission(permission).map(value -> value.getAuthorizedUsers().contains(player.getUuid())).orElse(false);
-        return b1 && b2;
+    public boolean hasPermission(String permission, ServerPlayerEntity player){
+        return getPermission(permission).map(p -> p.hasPermission(player))
+                .orElseThrow(() -> {
+                    throw new IllegalStateException("Invalid command permission provided: " + permission);
+                });
     }
 
-    public boolean groupHasPermission(String permission, PermissionGroup group){
-        return getPermission(permission).map(value -> value.getAuthorizedGroups().contains(group.getUuid())).orElse(false);
+    public boolean hasPermission(String permission, PermissionGroup group){
+        return getPermission(permission).map(p -> p.hasPermission(group))
+                .orElseThrow(() -> {
+                    throw new IllegalStateException("Invalid command permission provided: " + permission);
+                });
     }
 
 }
