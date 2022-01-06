@@ -4,15 +4,17 @@ import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.math.Vec3f;
 import net.minecraft.util.math.Vec3i;
+import net.minecraft.world.dimension.DimensionType;
+import net.minecraft.world.level.ServerWorldProperties;
 
 public class Utilities {
 
     public static String getWorldDimensionName(ServerWorld world){
-        return world.getDimension().getSkyProperties().getPath();
+        return ((ServerWorldProperties)(world.getLevelProperties())).getLevelName();
     }
 
     public static String getNiceWorldDimensionName(ServerWorld world){
-        String dimName = world.getDimension().getSkyProperties().getPath();
+        String dimName = getWorldDimensionName(world);
         return switch (dimName) {
             case "the_end" -> "The End";
             case "the_nether" -> "The Nether";

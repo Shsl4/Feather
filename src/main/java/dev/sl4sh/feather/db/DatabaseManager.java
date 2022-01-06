@@ -7,8 +7,6 @@ import java.util.Optional;
 
 public class DatabaseManager {
 
-    //private final Connection connection;
-
     public DatabaseManager() {
 
         try {

@@ -83,8 +83,8 @@ public final class LineRenderer implements DebugRenderer.Renderer {
 
             for (Line line : renderedLines) {
 
-                Matrix4f model = matrices.peek().getModel();
-                Matrix3f normal = matrices.peek().getNormal();
+                Matrix4f model = matrices.peek().getPositionMatrix();
+                Matrix3f normal = matrices.peek().getNormalMatrix();
                 Vec3f start = line.getStart();
                 Vec3f end = line.getEnd();
                 Vector4f color = line.getDrawColor();

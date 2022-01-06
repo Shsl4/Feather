@@ -7,10 +7,7 @@ import dev.sl4sh.feather.Feather;
 import net.fabricmc.fabric.impl.gametest.FabricGameTestModInitializer;
 import net.fabricmc.fabric.impl.resource.loader.FabricModResourcePack;
 import net.fabricmc.loader.FabricLoader;
-import net.fabricmc.loader.entrypoint.minecraft.hooks.EntrypointServer;
-import net.fabricmc.loader.launch.FabricTweaker;
 import net.fabricmc.loader.launch.common.FabricLauncher;
-import net.fabricmc.loader.launch.common.FabricMixinBootstrap;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 

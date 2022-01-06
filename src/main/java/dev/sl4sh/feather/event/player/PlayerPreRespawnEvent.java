@@ -28,7 +28,7 @@ public class PlayerPreRespawnEvent implements FeatherEvent {
         return player.getServer();
     }
 
-    public ServerWorld getWorld() { return player.getServerWorld(); }
+    public ServerWorld getWorld() { return player.getWorld(); }
 
     public boolean isAlive() { return this.alive; }
 

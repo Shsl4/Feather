@@ -2,7 +2,6 @@ package dev.sl4sh.feather.permissions;
 
 import dev.sl4sh.feather.Feather;
 import net.fabricmc.loader.FabricLoader;
-import net.fabricmc.loader.launch.FabricTweaker;
 import net.minecraft.server.network.ServerPlayerEntity;
 
 import java.util.ArrayList;
