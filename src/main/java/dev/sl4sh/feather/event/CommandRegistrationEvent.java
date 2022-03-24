@@ -21,10 +21,9 @@ public class CommandRegistrationEvent implements FeatherEvent {
         return environment;
     }
 
+    public LiteralCommandNode<ServerCommandSource> register(final LiteralArgumentBuilder<ServerCommandSource> command){
 
-    public LiteralCommandNode<ServerCommandSource> register(String prefix, final LiteralArgumentBuilder<ServerCommandSource> command){
-
-        return dispatcher.register(prefix, command);
+        return dispatcher.register(command);
 
     }
 

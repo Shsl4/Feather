@@ -76,7 +76,7 @@ public class ServerPlayerEntityMixin {
         Vec3d pos = player.getPos();
         Vec2f rot = player.getRotationClient();
 
-        PlayerPostDimensionChangeEvent event = new PlayerPostDimensionChangeEvent(player, pos, rot);
+        PlayerPostDimensionChangeEvent event = new PlayerPostDimensionChangeEvent(player, pos, rot, origin);
         Feather.getEventRegistry().POST_DIM_CHANGE.invoke(event);
 
     }

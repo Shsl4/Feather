@@ -5,11 +5,7 @@ import dev.sl4sh.feather.event.CommandExecutionEvent;
 import dev.sl4sh.feather.event.registration.EventRegistry;
 import dev.sl4sh.feather.event.registration.EventResponder;
 import dev.sl4sh.feather.event.registration.Register;
-import dev.sl4sh.feather.permissions.Permissions;
 import net.minecraft.server.network.ServerPlayerEntity;
-
-import java.util.Arrays;
-import java.util.List;
 
 @EventResponder
 public class CommandProcessor {

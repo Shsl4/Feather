@@ -15,7 +15,21 @@ public class Permission {
         return defaultValue;
     }
 
-    public record Entry(UUID uuid, boolean state) {}
+    public static class Entry {
+
+        private final UUID uuid;
+        private boolean state;
+
+        Entry(UUID uuid, boolean state){
+            this.uuid = uuid;
+            this.state = state;
+        }
+
+        public void setState(boolean state){
+            this.state = state;
+        }
+
+    }
 
     public String getId() {
         return id;
@@ -60,6 +74,19 @@ public class Permission {
         this.defaultValue = Permissions.getCommandDefaultValue(id);
         this.groupEntries = authorizedGroups;
         this.userEntries = authorizedUsers;
+    }
+
+    public void setEntry(ServerPlayerEntity user, boolean state){
+
+        Optional<Entry> entry = getUserEntries().stream().filter(e -> e.uuid.equals(user.getUuid())).findFirst();
+
+        if(entry.isPresent()){
+            entry.get().setState(state);
+        }
+        else{
+            userEntries.add(new Entry(user.getUuid(), state));
+        }
+
     }
 
     public boolean hasPermission(ServerPlayerEntity user){

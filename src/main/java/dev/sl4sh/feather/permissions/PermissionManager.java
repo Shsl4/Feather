@@ -1,9 +1,11 @@
 package dev.sl4sh.feather.permissions;
 
 import dev.sl4sh.feather.Feather;
-import net.fabricmc.loader.FabricLoader;
+import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.text.*;
 
+import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -29,20 +31,49 @@ public class PermissionManager {
 
     }
 
+    public void grantPermission(ServerCommandSource source, String id, ServerPlayerEntity player){
+
+        Optional<Permission> permission = permissions.stream().filter(p -> p.getId().equals(id)).findFirst();
+
+        if(permission.isPresent()){
+            permission.get().setEntry(player, true);
+            Text message = Text.of(String.format("§aGranted %s command usage to %s.", id, player.getName().asString()));
+            source.sendFeedback(message, false);
+
+        }
+        else{
+            source.sendError(Text.of(String.format("Trying to grant an unknown permission: %s.", id)));
+        }
+
+     }
+
+    public void revokePermission(ServerCommandSource source, String id, ServerPlayerEntity player){
+
+        Optional<Permission> permission = permissions.stream().filter(p -> p.getId().equals(id)).findFirst();
+
+        if(permission.isPresent()){
+            permission.get().setEntry(player, false);
+        }
+        else{
+            Feather.getLogger().error("Trying to revoke an unknown permission: {}", id);
+        }
+
+    }
+
     private String makeCommandId(String command){
 
-        if(command.contains(":")){
+       /* if(command.contains(":")){
             String[] spl = command.split(":");
             return spl[0] + ".command." + spl[1];
         }
-
-        return "command." + command;
+*/
+        return command;
 
     }
 
     public Optional<String> getCommandPermission(String command){
 
-        return permissions.stream().filter(p -> p.getId().contains(command)).findFirst().map(Permission::getId);
+        return permissions.stream().filter(p -> p.getId().matches(command)).findFirst().map(Permission::getId);
 
     }
 

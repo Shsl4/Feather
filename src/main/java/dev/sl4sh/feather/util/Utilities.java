@@ -25,14 +25,11 @@ public class Utilities {
     }
 
     public static Vec3f toVec3f(Vec3i vec){
-
         return new Vec3f(vec.getX(), vec.getY(), vec.getZ());
     }
 
     public static Vec3f toVec3f(Vec3d vec){
-
         return new Vec3f((float)vec.getX(), (float)vec.getY(), (float)vec.getZ());
-
     }
 
     @SuppressWarnings("unchecked")

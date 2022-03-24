@@ -5,7 +5,6 @@ import dev.sl4sh.feather.Feather;
 import dev.sl4sh.feather.commands.FeatherCommandDispatcher;
 import dev.sl4sh.feather.event.CommandExecutionEvent;
 import dev.sl4sh.feather.event.CommandRegistrationEvent;
-import net.fabricmc.fabric.api.command.v1.CommandRegistrationCallback;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.text.LiteralText;
