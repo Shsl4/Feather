@@ -33,7 +33,8 @@ public class FeatherCommandDispatcher extends CommandDispatcher<ServerCommandSou
 
         final var build = command.build();
         getRoot().addChild(build);
-        Feather.getPermissionManager().setupCommandPermission(build.getLiteral());
+
+        Feather.getPermissionManager().registerCommandName(command.getLiteral());
 
         return build;
 

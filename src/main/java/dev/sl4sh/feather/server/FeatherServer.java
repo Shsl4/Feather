@@ -58,13 +58,13 @@ public class FeatherServer implements DedicatedServerModInitializer {
 
     }
 
-    public static final SuggestionProvider<ServerCommandSource> COMMAND_SUGGESTION = ((context, builder) -> {
+    public static final SuggestionProvider<ServerCommandSource> COMMAND_SUGGESTION = ((context, builder) -> CommandSource.suggestMatching(Feather.getPermissionManager().getRegisteredCommandNames(), builder));
+
+    public static final SuggestionProvider<ServerCommandSource> TYPE_SUGGESTION = ((context, builder) -> {
 
         Collection<String> commands = new ArrayList<>();
-
-        for (Permission perm : Feather.getPermissionManager().getPermissions()){
-            commands.add(perm.getId());
-        }
+        commands.add("user");
+        commands.add("group");
 
         return CommandSource.suggestMatching(commands, builder);
 
@@ -73,25 +73,38 @@ public class FeatherServer implements DedicatedServerModInitializer {
     private static void registerCommands(CommandRegistrationEvent event) {
 
         event.register(CommandManager.literal("permission")
-                .then(CommandManager.literal("set")
+                .then(CommandManager.literal("set"))
+                .then(CommandManager.argument("type", StringArgumentType.word()).suggests(TYPE_SUGGESTION)
                 .then(CommandManager.argument("player", GameProfileArgumentType.gameProfile())
                 .then(CommandManager.argument("name", StringArgumentType.word()).suggests(COMMAND_SUGGESTION)
                 .then(CommandManager.argument("value", BoolArgumentType.bool())
                 .executes(context -> {
 
                     Collection<GameProfile> profiles = GameProfileArgumentType.getProfileArgument(context, "player");
-
                     UUID uuid = profiles.iterator().next().getId();
                     ServerPlayerEntity player = context.getSource().getServer().getPlayerManager().getPlayer(uuid);
-
                     String name = StringArgumentType.getString(context, "name");
+                    String type = StringArgumentType.getString(context, "type");
                     boolean value = BoolArgumentType.getBool(context, "value");
 
-                    if (value){
-                        Feather.getPermissionManager().grantPermission(context.getSource(), name, player);
+                    if (type.equals("user")){
+                        if (value){
+                            Feather.getPermissionManager().grantPermission(context.getSource(), name, player);
+                        }
+                        else{
+                            Feather.getPermissionManager().revokePermission(context.getSource(), name, player);
+                        }
+                    }
+                    else if (type.equals("group")){
+                        if (value){
+                            Feather.getPermissionManager().grantPermission(context.getSource(), name, player);
+                        }
+                        else{
+                            Feather.getPermissionManager().revokePermission(context.getSource(), name, player);
+                        }
                     }
                     else{
-                        Feather.getPermissionManager().revokePermission(context.getSource(), name, player);
+
                     }
 
                     return 0;

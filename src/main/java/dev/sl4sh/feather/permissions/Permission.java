@@ -2,26 +2,26 @@ package dev.sl4sh.feather.permissions;
 
 import dev.sl4sh.feather.Feather;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.text.Text;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.stream.Stream;
 
 public class Permission {
 
-    public boolean isDefaultValue() {
-        return defaultValue;
+    private Permission(){
+
     }
 
     public static class Entry {
 
-        private final UUID uuid;
+        private final String permission;
         private boolean state;
 
-        Entry(UUID uuid, boolean state){
-            this.uuid = uuid;
+        Entry(String permission, boolean state){
+            this.permission = permission;
             this.state = state;
         }
 
@@ -31,87 +31,95 @@ public class Permission {
 
     }
 
-    public String getId() {
-        return id;
-    }
+    public static class User {
 
-    public Type getType() {
-        return type;
-    }
+        private final UUID uuid;
+        private final List<Entry> permissions;
 
-    public List<Entry> getGroupEntries() {
-        return groupEntries;
-    }
-
-    public List<Entry> getUserEntries() {
-        return userEntries;
-    }
-
-    public enum Type{
-
-        COMMAND,
-        EVENT
-
-    }
-
-    private final String id;
-    private final Type type;
-    private final List<Entry> groupEntries;
-    private final List<Entry> userEntries;
-    private final boolean defaultValue;
-
-    public Permission(String id, Type type) {
-        this.id = id;
-        this.type = type;
-        this.defaultValue = Permissions.getCommandDefaultValue(id);
-        this.groupEntries = new ArrayList<>();
-        this.userEntries = new ArrayList<>();
-    }
-
-    public Permission(String id, Type type, List<Entry> authorizedGroups, List<Entry> authorizedUsers) {
-        this.id = id;
-        this.type = type;
-        this.defaultValue = Permissions.getCommandDefaultValue(id);
-        this.groupEntries = authorizedGroups;
-        this.userEntries = authorizedUsers;
-    }
-
-    public void setEntry(ServerPlayerEntity user, boolean state){
-
-        Optional<Entry> entry = getUserEntries().stream().filter(e -> e.uuid.equals(user.getUuid())).findFirst();
-
-        if(entry.isPresent()){
-            entry.get().setState(state);
-        }
-        else{
-            userEntries.add(new Entry(user.getUuid(), state));
+        public User(UUID uuid) {
+            this.uuid = uuid;
+            this.permissions = new ArrayList<>();
         }
 
-    }
+        public void setEntry(String permission, boolean state){
 
-    public boolean hasPermission(ServerPlayerEntity user){
+            Optional<Entry> entry = permissions.stream().filter(e -> e.permission.equals(permission)).findFirst();
 
-        // Get the user's permission groups
-        List<PermissionGroup> groups = Feather.getPermissionManager().getUserGroups(user);
+            if(entry.isPresent()){
+                entry.get().setState(state);
+            }
+            else{
+                permissions.add(new Entry(permission, state));
+            }
 
-        // If any of its groups has permission, the user has too.
-        if(groups.stream().anyMatch(this::hasPermission)){
-            return true;
         }
 
-        // Find the user permission entry using its uuid
-        Optional<Entry> entry = getUserEntries().stream().filter(e -> e.uuid.equals(user.getUuid())).findFirst();
-        // Return the entry value if it exists. Otherwise, return the default permission value.
-        return entry.map(value -> value.state).orElse(defaultValue);
+        public boolean hasPermission(String permission)
+        {
+            Optional<Entry> entry = permissions.stream().filter(p -> p.permission.equals(permission)).findFirst();
+            return entry.map(value -> value.state).orElse(false);
+        }
 
+        public UUID getUuid() { return uuid; }
+
+        public List<Entry> getPermissions() { return permissions; }
     }
 
-    public boolean hasPermission(PermissionGroup group){
+    public static class Group extends User{
 
-        // Find the group permission entry using its uuid
-        Optional<Entry> entry = getGroupEntries().stream().filter(e -> e.uuid.equals(group.getUuid())).findFirst();
-        // Return the entry value if it exists. Otherwise, return the default permission value.
-        return entry.map(value -> value.state).orElse(defaultValue);
+        private final String name;
+        private final Text displayName;
+        private final List<UUID> users;
+
+        public Group(String name, UUID uuid, Text displayName, List<UUID> users) {
+
+            super(uuid);
+
+            this.name = name;
+            this.displayName = displayName;
+            this.users = users;
+
+        }
+
+        public Group(String name, UUID uuid, Text displayName) {
+
+            super(uuid);
+
+            this.name = name;
+            this.displayName = displayName;
+            this.users = new ArrayList<>();
+
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public Text getDisplayName() {
+            return displayName;
+        }
+
+        public List<UUID> getUsers() {
+            return users;
+        }
+
+        public void addMember(ServerPlayerEntity user) {
+            if (!users.contains(user.getUuid())){
+                users.add(user.getUuid());
+            }
+        }
+
+        public void removeMember(ServerPlayerEntity user){
+            users.remove(user.getUuid());
+        }
+
+        public boolean isMember(UUID userID){
+            return users.contains(userID);
+        }
+
+        public boolean isMember(ServerPlayerEntity user){
+            return users.contains(user.getUuid());
+        }
 
     }
 

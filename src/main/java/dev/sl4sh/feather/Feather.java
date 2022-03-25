@@ -53,19 +53,6 @@ public class Feather implements ModInitializer {
 
     public static void registerCommands(CommandRegistrationEvent event){
 
-        event.register(CommandManager.literal("cool").executes((context) -> {
-
-            for(var a : getPermissionManager().getPermissions()){
-
-                getLogger().info(a.getId());
-
-            }
-
-            return 0;
-
-        }));
-
-
     }
 
     @Override
