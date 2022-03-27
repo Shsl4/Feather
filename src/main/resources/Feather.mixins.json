@@ -10,13 +10,13 @@
     "ServerPlayerInteractionManagerMixin"
   ],
   "client": [
-    "MinecraftClientMixin",
-    "DebugRendererMixin"
+    "DebugRendererMixin",
+    "MinecraftClientMixin"
   ],
   "server": [
     "CommandManagerMixin",
     "PlayerManagerMixin",
-    "ServerPlayerEntityMixin",
+    "ServerPlayerEntityMixin"
   ],
   "injectors": {
     "defaultRequire": 1

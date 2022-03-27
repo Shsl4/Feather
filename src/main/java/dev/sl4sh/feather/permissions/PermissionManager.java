@@ -5,32 +5,26 @@ import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 public class PermissionManager {
 
-    private static final Permission.Group ADMIN_GROUP = new Permission.Group("*",
-            new UUID(0, 0),
-            Text.of("\u00a7cAdministrator"),
-            new ArrayList<>());
-
     private final List<Permission.Group> groups = new ArrayList<>();
     private final List<Permission.User> users = new ArrayList<>();
+
+    public Optional<Permission.Group> getGroup(String name){
+        return groups.stream().filter(g -> g.getName().equals(name)).findFirst();
+    }
+
+    public List<Permission.Group> getGroups() { return groups; }
+
+    public List<Permission.User> getUsers() { return users; }
 
     public List<String> getRegisteredCommandNames() {
         return registeredCommandNames;
     }
 
     private final List<String> registeredCommandNames = new ArrayList<>();
-
-    public PermissionManager(){
-
-        groups.add(ADMIN_GROUP);
-
-    }
 
     public void registerCommandName(String name){
         if (!registeredCommandNames.contains(name)){
@@ -40,7 +34,7 @@ public class PermissionManager {
 
     public void createGroup(ServerCommandSource source, String name, Text displayName){
 
-        if (groups.stream().anyMatch(g -> g.getName().equals(name))){
+        if (groups.stream().anyMatch(g -> g.getName().equalsIgnoreCase(name))){
 
             source.sendError(Text.of("A group with the same name already exists."));
             return;
@@ -48,6 +42,35 @@ public class PermissionManager {
         }
 
         groups.add(new Permission.Group(name, UUID.randomUUID(), displayName));
+
+        source.sendFeedback(Text.of("\u00a7aSuccessfully created group " + name + "!"), false);
+
+    }
+
+    public void deleteGroup(ServerCommandSource source, String name){
+
+        Optional<Permission.Group> group = groups.stream().filter(g -> g.getName().equals(name)).findFirst();
+
+        if (group.isEmpty()){
+
+            source.sendError(Text.of("The group named " + name + " does not exist."));
+            return;
+
+        }
+
+        groups.remove(group.get());
+
+        for (UUID uuid : group.get().getUsers().keySet()){
+
+            ServerPlayerEntity player = source.getServer().getPlayerManager().getPlayer(uuid);
+
+            if (player != null){
+                source.getServer().getCommandManager().sendCommandTree(player);
+            }
+
+        }
+
+        source.sendError(Text.of("\u00a7lThe group named " + name + " was deleted."));
 
     }
 
@@ -67,6 +90,8 @@ public class PermissionManager {
 
         source.sendFeedback(message, false);
 
+        source.getServer().getCommandManager().sendCommandTree(player);
+
     }
 
     public void grantPermission(ServerCommandSource source, String id, String groupName){
@@ -77,6 +102,17 @@ public class PermissionManager {
             group.get().setEntry(id, true);
             Text message = Text.of(String.format("\u00a7aGranted %s permission to group %s\u00a7r.", id, group.get().getDisplayName().asString()));
             source.sendFeedback(message, false);
+
+            for (UUID uuid : group.get().getUsers().keySet()){
+
+                ServerPlayerEntity player = source.getServer().getPlayerManager().getPlayer(uuid);
+
+                if (player != null){
+                    source.getServer().getCommandManager().sendCommandTree(player);
+                }
+
+            }
+
         }
         else{
             source.sendError(Text.of(String.format("The group %s does not exist.", id)));
@@ -100,6 +136,8 @@ public class PermissionManager {
 
         source.sendFeedback(message, false);
 
+        source.getServer().getCommandManager().sendCommandTree(player);
+
     }
 
     public void revokePermission(ServerCommandSource source, String id, String groupName){
@@ -110,6 +148,17 @@ public class PermissionManager {
             group.get().setEntry(id, false);
             Text message = Text.of(String.format("\u00a7cRevoked %s permission to group %s\u00a7r.", id, group.get().getDisplayName().asString()));
             source.sendFeedback(message, false);
+
+            for (UUID uuid : group.get().getUsers().keySet()){
+
+                ServerPlayerEntity player = source.getServer().getPlayerManager().getPlayer(uuid);
+
+                if (player != null){
+                    source.getServer().getCommandManager().sendCommandTree(player);
+                }
+
+            }
+
         }
         else{
             source.sendError(Text.of(String.format("The group %s does not exist.", id)));
@@ -131,7 +180,7 @@ public class PermissionManager {
         Optional<Permission.User> user = users.stream().filter(u -> u.getUuid().equals(player.getUuid())).findFirst();
 
         // Return the permission value or false if absent.
-        return user.map(value -> value.hasPermission(permission)).orElse(false);
+        return user.map(value -> value.hasPermission(permission) || value.hasPermission("*")).orElse(false);
 
     }
 
@@ -141,7 +190,7 @@ public class PermissionManager {
         Optional<Permission.Group> group = groups.stream().filter(g -> g.getName().equals(groupName)).findFirst();
 
         // Return the entry value if it exists. Otherwise, return the default permission value.
-        return group.map(value -> value.hasPermission(permission)).orElse(false);
+        return group.map(value -> value.hasPermission(permission) || value.hasPermission("*")).orElse(false);
 
     }
 

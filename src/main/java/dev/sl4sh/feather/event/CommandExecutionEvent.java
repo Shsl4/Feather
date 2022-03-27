@@ -28,12 +28,6 @@ public class CommandExecutionEvent extends CancellableEvent{
         return fullCommand;
     }
 
-    public String getCommandId(){
-
-        return Feather.getPermissionManager().getCommandPermission(commandName).orElse("");
-
-    }
-
     public ServerCommandSource getSource() {
         return source;
     }

@@ -36,7 +36,7 @@ public class Feather implements ModInitializer {
     public static final LineDrawer LINE_DRAWER = new LineDrawer();
 
     public static Logger getLogger() { return LOGGER; }
-    public static EventRegistry getEventRegistry(){ return EVENT_REGISTRY;}
+    public static EventRegistry getEventRegistry(){ return EVENT_REGISTRY; }
     public static DatabaseManager getDatabaseManager(){ return DATABASE_MANAGER; }
     public static PermissionManager getPermissionManager(){ return PERMISSION_MANAGER; }
 

@@ -2,6 +2,7 @@ package dev.sl4sh.feather.commands;
 
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
+import com.mojang.brigadier.tree.CommandNode;
 import com.mojang.brigadier.tree.LiteralCommandNode;
 import dev.sl4sh.feather.Feather;
 import net.fabricmc.fabric.impl.gametest.FabricGameTestModInitializer;
@@ -15,6 +16,18 @@ public class FeatherCommandDispatcher extends CommandDispatcher<ServerCommandSou
 
     public FeatherCommandDispatcher() {
 
+    }
+
+    public static LiteralCommandNode<ServerCommandSource> build(final LiteralArgumentBuilder<ServerCommandSource> command) {
+
+        final FeatherCommandNode result = new FeatherCommandNode(command.getLiteral(),
+                command.getCommand(), command.getRequirement(), command.getRedirect(), command.getRedirectModifier(), command.isFork());
+
+        for (final CommandNode<ServerCommandSource> argument : command.getArguments()) {
+            result.addChild(argument);
+        }
+
+        return result;
     }
 
     @Override
@@ -31,7 +44,7 @@ public class FeatherCommandDispatcher extends CommandDispatcher<ServerCommandSou
 
         }
 
-        final var build = command.build();
+        final var build = build(command);
         getRoot().addChild(build);
 
         Feather.getPermissionManager().registerCommandName(command.getLiteral());

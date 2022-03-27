@@ -4,10 +4,7 @@ import dev.sl4sh.feather.Feather;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 public class Permission {
 
@@ -16,6 +13,14 @@ public class Permission {
     }
 
     public static class Entry {
+
+        public String getPermission() {
+            return permission;
+        }
+
+        public boolean getState() {
+            return state;
+        }
 
         private final String permission;
         private boolean state;
@@ -69,9 +74,9 @@ public class Permission {
 
         private final String name;
         private final Text displayName;
-        private final List<UUID> users;
+        private final Map<UUID, String> users;
 
-        public Group(String name, UUID uuid, Text displayName, List<UUID> users) {
+        public Group(String name, UUID uuid, Text displayName, Map<UUID, String> users) {
 
             super(uuid);
 
@@ -87,7 +92,7 @@ public class Permission {
 
             this.name = name;
             this.displayName = displayName;
-            this.users = new ArrayList<>();
+            this.users = new HashMap<>();
 
         }
 
@@ -99,26 +104,26 @@ public class Permission {
             return displayName;
         }
 
-        public List<UUID> getUsers() {
+        public Map<UUID, String> getUsers() {
             return users;
         }
 
         public void addMember(ServerPlayerEntity user) {
-            if (!users.contains(user.getUuid())){
-                users.add(user.getUuid());
+            if (!users.containsKey(user.getUuid())){
+                users.put(user.getUuid(), user.getName().asString());
             }
         }
 
-        public void removeMember(ServerPlayerEntity user){
-            users.remove(user.getUuid());
+        public boolean removeMember(String user){
+            return users.values().remove(user);
         }
 
         public boolean isMember(UUID userID){
-            return users.contains(userID);
+            return users.containsKey(userID);
         }
 
         public boolean isMember(ServerPlayerEntity user){
-            return users.contains(user.getUuid());
+            return users.containsKey(user.getUuid());
         }
 
     }
