@@ -5,7 +5,6 @@ import dev.sl4sh.feather.event.CommandExecutionEvent;
 import dev.sl4sh.feather.event.registration.EventRegistry;
 import dev.sl4sh.feather.event.registration.EventResponder;
 import dev.sl4sh.feather.event.registration.Register;
-import net.minecraft.server.command.ScoreboardCommand;
 import net.minecraft.server.network.ServerPlayerEntity;
 
 @EventResponder
@@ -22,7 +21,7 @@ public class CommandProcessor {
 
         if(event.getSource().getEntity() instanceof ServerPlayerEntity player){
 
-            if(!Feather.getPermissionManager().hasPermission(event.getCommandName(), player)){
+            if(!Feather.getPermissionService().hasPermission(event.getCommandName(), player)){
 
                 //event.setCancelled(true, "You are not allowed to run this command.");
 

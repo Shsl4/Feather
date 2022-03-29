@@ -1,16 +1,27 @@
-package dev.sl4sh.feather.permissions;
+package dev.sl4sh.feather.services;
 
+import com.google.gson.reflect.TypeToken;
+import com.google.gson.stream.JsonReader;
 import dev.sl4sh.feather.Feather;
+import dev.sl4sh.feather.Permission;
+import dev.sl4sh.feather.Service;
+import dev.sl4sh.feather.util.Utilities;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
 
+import java.io.*;
+import java.lang.reflect.Type;
 import java.util.*;
 
-public class PermissionManager {
+public class PermissionService implements Service {
 
-    private final List<Permission.Group> groups = new ArrayList<>();
-    private final List<Permission.User> users = new ArrayList<>();
+    private List<Permission.Group> groups = new ArrayList<>();
+    private List<Permission.User> users = new ArrayList<>();
+
+    public PermissionService(){
+        loadConfiguration();
+    }
 
     public Optional<Permission.Group> getGroup(String name){
         return groups.stream().filter(g -> g.getName().equals(name)).findFirst();
@@ -32,7 +43,7 @@ public class PermissionManager {
         }
     }
 
-    public void createGroup(ServerCommandSource source, String name, Text displayName){
+    public void createGroup(ServerCommandSource source, String name, String displayName){
 
         if (groups.stream().anyMatch(g -> g.getName().equalsIgnoreCase(name))){
 
@@ -44,6 +55,8 @@ public class PermissionManager {
         groups.add(new Permission.Group(name, UUID.randomUUID(), displayName));
 
         source.sendFeedback(Text.of("\u00a7aSuccessfully created group " + name + "!"), false);
+
+        writeConfiguration();
 
     }
 
@@ -72,6 +85,8 @@ public class PermissionManager {
 
         source.sendError(Text.of("\u00a7lThe group named " + name + " was deleted."));
 
+        writeConfiguration();
+
     }
 
     public void grantPermission(ServerCommandSource source, String id, ServerPlayerEntity player){
@@ -92,6 +107,8 @@ public class PermissionManager {
 
         source.getServer().getCommandManager().sendCommandTree(player);
 
+        writeConfiguration();
+
     }
 
     public void grantPermission(ServerCommandSource source, String id, String groupName){
@@ -99,19 +116,11 @@ public class PermissionManager {
         Optional<Permission.Group> group = groups.stream().filter(g -> g.getName().equals(groupName)).findFirst();
 
         if(group.isPresent()){
+
             group.get().setEntry(id, true);
-            Text message = Text.of(String.format("\u00a7aGranted %s permission to group %s\u00a7r.", id, group.get().getDisplayName().asString()));
-            source.sendFeedback(message, false);
-
-            for (UUID uuid : group.get().getUsers().keySet()){
-
-                ServerPlayerEntity player = source.getServer().getPlayerManager().getPlayer(uuid);
-
-                if (player != null){
-                    source.getServer().getCommandManager().sendCommandTree(player);
-                }
-
-            }
+            Utilities.sendSuccess(source, String.format("Granted %s permission to group %s\u00a7r.", id, group.get().getDisplayName()));
+            Utilities.resendCommandTrees(source, group.get());
+            writeConfiguration();
 
         }
         else{
@@ -138,6 +147,8 @@ public class PermissionManager {
 
         source.getServer().getCommandManager().sendCommandTree(player);
 
+        writeConfiguration();
+
     }
 
     public void revokePermission(ServerCommandSource source, String id, String groupName){
@@ -145,19 +156,11 @@ public class PermissionManager {
         Optional<Permission.Group> group = groups.stream().filter(g -> g.getName().equals(groupName)).findFirst();
 
         if(group.isPresent()){
+
             group.get().setEntry(id, false);
-            Text message = Text.of(String.format("\u00a7cRevoked %s permission to group %s\u00a7r.", id, group.get().getDisplayName().asString()));
-            source.sendFeedback(message, false);
-
-            for (UUID uuid : group.get().getUsers().keySet()){
-
-                ServerPlayerEntity player = source.getServer().getPlayerManager().getPlayer(uuid);
-
-                if (player != null){
-                    source.getServer().getCommandManager().sendCommandTree(player);
-                }
-
-            }
+            Utilities.sendError(source, String.format("Revoked %s permission to group %s\u00a7r.", id, group.get().getDisplayName()));
+            Utilities.resendCommandTrees(source, group.get());
+            writeConfiguration();
 
         }
         else{
@@ -192,6 +195,67 @@ public class PermissionManager {
         // Return the entry value if it exists. Otherwise, return the default permission value.
         return group.map(value -> value.hasPermission(permission) || value.hasPermission("*")).orElse(false);
 
+    }
+
+    @Override
+    public void loadConfiguration() {
+
+        try {
+
+            JsonReader reader = new JsonReader(new FileReader("Feather/Permissions/Groups.json"));
+            Type groupList = new TypeToken<List<Permission.Group>>() {}.getType();
+
+            this.groups = Feather.getGson().fromJson(reader, groupList);
+
+        }
+        catch (FileNotFoundException ignored) {
+            this.groups = new ArrayList<>();
+        }
+
+        try {
+
+            JsonReader reader = new JsonReader(new FileReader("Feather/Permissions/Users.json"));
+            Type userList = new TypeToken<List<Permission.User>>() {}.getType();
+
+            this.users = Feather.getGson().fromJson(reader, userList);
+
+        }
+        catch (FileNotFoundException ignored) {
+            this.users = new ArrayList<>();
+        }
+
+    }
+
+    @Override
+    public void writeConfiguration() {
+
+        try {
+
+            Writer writer = Utilities.makeWriter("Feather/Permissions/Groups.json");
+            Feather.getGson().toJson(groups, writer);
+            writer.flush();
+            writer.close();
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        try {
+
+            Writer writer = Utilities.makeWriter("Feather/Permissions/Users.json");
+            Feather.getGson().toJson(users, writer);
+            writer.flush();
+            writer.close();
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+    }
+
+    @Override
+    public boolean getServiceState() {
+        return true;
     }
 
 }

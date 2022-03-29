@@ -15,13 +15,17 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
+import javax.annotation.Nullable;
+
 @Mixin(ServerPlayerEntity.class)
 public class ServerPlayerEntityMixin {
 
     @Inject(at = @At(value = "TAIL"), method = "onDeath")
     public void onDeath(DamageSource source, CallbackInfo info) {
 
-        PlayerPostDeathEvent event = new PlayerPostDeathEvent(Utilities.as(this), source);
+        ServerPlayerEntity player = Utilities.as(this);
+
+        PlayerPostDeathEvent event = new PlayerPostDeathEvent(player, source);
         Feather.getEventRegistry().POST_DEATH.invoke(event);
 
     }

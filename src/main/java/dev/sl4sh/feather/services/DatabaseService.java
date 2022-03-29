@@ -1,13 +1,14 @@
-package dev.sl4sh.feather.db;
+package dev.sl4sh.feather.services;
 
-import dev.sl4sh.feather.permissions.Permission;
+import dev.sl4sh.feather.Permission;
+import dev.sl4sh.feather.Service;
 
 import java.sql.*;
 import java.util.Optional;
 
-public class DatabaseManager {
+public class DatabaseService implements Service {
 
-    public DatabaseManager() {
+    public DatabaseService() {
 
         try {
 
@@ -48,4 +49,18 @@ public class DatabaseManager {
     }
 
 
+    @Override
+    public void loadConfiguration() {
+
+    }
+
+    @Override
+    public void writeConfiguration() {
+
+    }
+
+    @Override
+    public boolean getServiceState() {
+        return false;
+    }
 }

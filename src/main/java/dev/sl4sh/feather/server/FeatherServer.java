@@ -12,7 +12,7 @@ import dev.sl4sh.feather.event.player.*;
 import dev.sl4sh.feather.event.registration.EventRegistry;
 import dev.sl4sh.feather.event.registration.EventResponder;
 import dev.sl4sh.feather.event.registration.Register;
-import dev.sl4sh.feather.permissions.Permission;
+import dev.sl4sh.feather.Permission;
 import dev.sl4sh.feather.util.Utilities;
 import net.fabricmc.api.DedicatedServerModInitializer;
 import net.fabricmc.api.EnvType;
@@ -22,10 +22,9 @@ import net.minecraft.command.argument.GameProfileArgumentType;
 import net.minecraft.server.PlayerManager;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
-import net.minecraft.server.dedicated.command.OpCommand;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
-import net.minecraft.text.TextColor;
+import net.minecraft.util.math.Vec3d;
 
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -54,13 +53,13 @@ public class FeatherServer implements DedicatedServerModInitializer {
 
     }
 
-    public static final SuggestionProvider<ServerCommandSource> COMMAND_SUGGESTION = ((context, builder) -> CommandSource.suggestMatching(Feather.getPermissionManager().getRegisteredCommandNames(), builder));
+    public static final SuggestionProvider<ServerCommandSource> COMMAND_SUGGESTION = ((context, builder) -> CommandSource.suggestMatching(Feather.getPermissionService().getRegisteredCommandNames(), builder));
 
     public static final SuggestionProvider<ServerCommandSource> GROUP_SUGGESTION = ((context, builder) -> {
 
         List<String> suggestions = new ArrayList<>();
 
-        for (Permission.Group group : Feather.getPermissionManager().getGroups()) {
+        for (Permission.Group group : Feather.getPermissionService().getGroups()) {
             suggestions.add(group.getName());
         }
 
@@ -72,7 +71,7 @@ public class FeatherServer implements DedicatedServerModInitializer {
 
         String name = StringArgumentType.getString(context, "name");
 
-        Optional<Permission.Group> group = Feather.getPermissionManager().getGroup(name);
+        Optional<Permission.Group> group = Feather.getPermissionService().getGroup(name);
 
         if (group.isPresent()) {
             return CommandSource.suggestMatching(group.get().getUsers().values(), builder);
@@ -97,7 +96,7 @@ public class FeatherServer implements DedicatedServerModInitializer {
             return 1;
         }
 
-        Optional<Permission.Group> group = Feather.getPermissionManager().getGroup(name);
+        Optional<Permission.Group> group = Feather.getPermissionService().getGroup(name);
 
         if (group.isPresent()) {
 
@@ -112,7 +111,7 @@ public class FeatherServer implements DedicatedServerModInitializer {
 
             source.sendFeedback(Text.of(String.format("\u00a7aSuccessfully added user %s to group %s.",
                     player.getName().asString(),
-                    group.get().getDisplayName().asString())), false);
+                    group.get().getDisplayName())), false);
 
         } else {
 
@@ -125,13 +124,13 @@ public class FeatherServer implements DedicatedServerModInitializer {
 
     }
 
-    private static int removeUser(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+    private static int removeUser(CommandContext<ServerCommandSource> context) {
 
         ServerCommandSource source = context.getSource();
         String name = StringArgumentType.getString(context, "name");
         String user = StringArgumentType.getString(context, "user");
 
-        Optional<Permission.Group> group = Feather.getPermissionManager().getGroup(name);
+        Optional<Permission.Group> group = Feather.getPermissionService().getGroup(name);
 
         if (group.isPresent()) {
 
@@ -157,48 +156,48 @@ public class FeatherServer implements DedicatedServerModInitializer {
     }
 
 
-    private static int listPermissions(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+    private static int listPermissions(CommandContext<ServerCommandSource> context) {
 
         ServerCommandSource source = context.getSource();
-        List<String> permissions = Feather.getPermissionManager().getRegisteredCommandNames();
+        List<String> permissions = Feather.getPermissionService().getRegisteredCommandNames();
         source.sendFeedback(Text.of("\u00a72" + String.join(", ", permissions)), false);
 
         return 0;
 
     }
 
-    private static int createGroup(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+    private static int createGroup(CommandContext<ServerCommandSource> context) {
 
         ServerCommandSource source = context.getSource();
         String name = StringArgumentType.getString(context, "name");
-        Feather.getPermissionManager().createGroup(source, name, Text.of(name));
+        Feather.getPermissionService().createGroup(source, name, name);
 
         return 0;
 
     }
 
-    private static int deleteGroup(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+    private static int deleteGroup(CommandContext<ServerCommandSource> context) {
 
         ServerCommandSource source = context.getSource();
         String name = StringArgumentType.getString(context, "name");
-        Feather.getPermissionManager().deleteGroup(source, name);
+        Feather.getPermissionService().deleteGroup(source, name);
 
         return 0;
 
     }
 
-    private static int infoGroup(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+    private static int infoGroup(CommandContext<ServerCommandSource> context) {
 
         ServerCommandSource source = context.getSource();
         String name = StringArgumentType.getString(context, "name");
 
-        Optional<Permission.Group> optionalGroup = Feather.getPermissionManager().getGroup(name);
+        Optional<Permission.Group> optionalGroup = Feather.getPermissionService().getGroup(name);
 
         if (optionalGroup.isPresent()) {
 
             Permission.Group group = optionalGroup.get();
 
-            source.sendFeedback(Text.of(String.format("\u00a76| %s\u00a76 Members |\n", group.getDisplayName().asString())), false);
+            source.sendFeedback(Text.of(String.format("\u00a76| %s\u00a76 Members |\n", group.getDisplayName())), false);
 
             if (group.getUsers().size() > 0){
 
@@ -215,7 +214,7 @@ public class FeatherServer implements DedicatedServerModInitializer {
                 source.sendFeedback(Text.of("\u00a77The group has no members yet."), false);
             }
 
-            source.sendFeedback(Text.of(String.format("\n\u00a76| %s\u00a76 Permissions |\n", group.getDisplayName().asString())), false);
+            source.sendFeedback(Text.of(String.format("\n\u00a76| %s\u00a76 Permissions |\n", group.getDisplayName())), false);
 
             if (group.getPermissions().size() > 0){
 
@@ -257,11 +256,11 @@ public class FeatherServer implements DedicatedServerModInitializer {
 
         if (value) {
 
-            Feather.getPermissionManager().grantPermission(context.getSource(), permission, player);
+            Feather.getPermissionService().grantPermission(context.getSource(), permission, player);
 
         } else {
 
-            Feather.getPermissionManager().revokePermission(context.getSource(), permission, player);
+            Feather.getPermissionService().revokePermission(context.getSource(), permission, player);
 
         }
 
@@ -269,16 +268,94 @@ public class FeatherServer implements DedicatedServerModInitializer {
 
     }
 
-    private static int setGroupPermission(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+    private static int setGroupPermission(CommandContext<ServerCommandSource> context) {
 
         String permission = StringArgumentType.getString(context, "permission");
         String name = StringArgumentType.getString(context, "name");
         boolean value = BoolArgumentType.getBool(context, "value");
 
         if (value) {
-            Feather.getPermissionManager().grantPermission(context.getSource(), permission, name);
+            Feather.getPermissionService().grantPermission(context.getSource(), permission, name);
         } else {
-            Feather.getPermissionManager().revokePermission(context.getSource(), permission, name);
+            Feather.getPermissionService().revokePermission(context.getSource(), permission, name);
+        }
+
+        return 0;
+
+    }
+
+    private static int heal(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+
+        try {
+
+            Collection<GameProfile> profiles = GameProfileArgumentType.getProfileArgument(context, "user");
+
+            PlayerManager manager = context.getSource().getServer().getPlayerManager();
+
+            for (GameProfile profile : profiles){
+
+                ServerPlayerEntity player = manager.getPlayer(profile.getId());
+
+                if (player != null){
+                    Utilities.restoreHealth(player);
+                }
+
+            }
+
+
+        }
+        catch (IllegalArgumentException e){
+
+            try{
+
+                ServerPlayerEntity player = context.getSource().getPlayer();
+                Utilities.restoreHealth(player);
+
+            }
+            catch (CommandSyntaxException e2){
+
+                Utilities.sendError(context.getSource(), "This command can only be used by players.");
+
+            }
+
+        }
+        return 0;
+
+    }
+
+    private static int feed(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+
+        try {
+
+            Collection<GameProfile> profiles = GameProfileArgumentType.getProfileArgument(context, "user");
+
+            PlayerManager manager = context.getSource().getServer().getPlayerManager();
+
+            for (GameProfile profile : profiles){
+
+                ServerPlayerEntity player = manager.getPlayer(profile.getId());
+
+                if (player != null){
+                    Utilities.feed(player);
+                }
+
+            }
+
+        }
+        catch (IllegalArgumentException e){
+
+            try{
+
+                ServerPlayerEntity player = context.getSource().getPlayer();
+                Utilities.feed(player);
+
+            }
+            catch (CommandSyntaxException e2){
+
+                Utilities.sendError(context.getSource(), "This command can only be used by players.");
+
+            }
+
         }
 
         return 0;
@@ -342,6 +419,44 @@ public class FeatherServer implements DedicatedServerModInitializer {
                         .executes(FeatherServer::listPermissions))
 
         );
+
+        event.register(CommandManager.literal("heal")
+                .then(CommandManager.argument("user", GameProfileArgumentType.gameProfile())
+                        .executes(FeatherServer::heal))
+                .executes(FeatherServer::heal));
+
+        event.register(CommandManager.literal("feed")
+                .then(CommandManager.argument("user", GameProfileArgumentType.gameProfile())
+                        .executes(FeatherServer::feed))
+                .executes(FeatherServer::feed));
+
+        event.register(CommandManager.literal("feather")
+                .then(CommandManager.literal("reload")
+                        .executes((context -> {
+
+                            Feather.getPermissionService().loadConfiguration();
+
+                            for (ServerPlayerEntity player : context.getSource().getServer().getPlayerManager().getPlayerList()){
+                                context.getSource().getServer().getCommandManager().sendCommandTree(player);
+                            }
+
+                            Utilities.sendSuccess(context.getSource(), "Reloaded JSON configuration files.");
+                            return 0;
+
+                        }))));
+
+        event.register(CommandManager.literal("back")
+                .executes(context -> {
+
+                    ServerPlayerEntity player = context.getSource().getPlayer();
+
+                    if (!Feather.getBackService().back(player)){
+                        Utilities.sendWarning(context.getSource(), "You do not have any previous death location.");
+                    }
+
+                    return 0;
+
+                }));
 
     }
 

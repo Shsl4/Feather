@@ -20,7 +20,7 @@ public class FeatherCommandNode extends LiteralCommandNode<ServerCommandSource> 
 
         try {
             // Check if the player has permission to use the command
-            return Feather.getPermissionManager().hasPermission(getLiteral(), source.getPlayer());
+            return Feather.getPermissionService().hasPermission(getLiteral(), source.getPlayer());
         } catch (CommandSyntaxException e) {
 
             // If the block throws, the source is not a player and only the console is allowed to use any command.

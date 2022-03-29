@@ -5,6 +5,7 @@
   "compatibilityLevel": "JAVA_16",
   "mixinPriority": -50,
   "mixins": [
+    "EntitySelectorMixin",
     "ItemMixin",
     "ItemStackMixin",
     "ServerPlayerInteractionManagerMixin"

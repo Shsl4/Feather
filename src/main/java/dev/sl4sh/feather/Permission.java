@@ -1,4 +1,4 @@
-package dev.sl4sh.feather.permissions;
+package dev.sl4sh.feather;
 
 import dev.sl4sh.feather.Feather;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -73,10 +73,10 @@ public class Permission {
     public static class Group extends User{
 
         private final String name;
-        private final Text displayName;
+        private final String displayName;
         private final Map<UUID, String> users;
 
-        public Group(String name, UUID uuid, Text displayName, Map<UUID, String> users) {
+        public Group(String name, UUID uuid, String displayName, Map<UUID, String> users) {
 
             super(uuid);
 
@@ -86,7 +86,7 @@ public class Permission {
 
         }
 
-        public Group(String name, UUID uuid, Text displayName) {
+        public Group(String name, UUID uuid, String displayName) {
 
             super(uuid);
 
@@ -100,7 +100,7 @@ public class Permission {
             return name;
         }
 
-        public Text getDisplayName() {
+        public String getDisplayName() {
             return displayName;
         }
 
