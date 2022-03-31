@@ -1,12 +1,13 @@
 package dev.sl4sh.feather;
 
 import com.google.gson.Gson;
+import dev.sl4sh.feather.client.rendering.RenderHandler;
+import dev.sl4sh.feather.commands.CommandProcessor;
 import dev.sl4sh.feather.event.CommandRegistrationEvent;
 import dev.sl4sh.feather.event.registration.EventRegistry;
-import dev.sl4sh.feather.event.registration.EventResponder;
-import dev.sl4sh.feather.event.registration.Register;
 import dev.sl4sh.feather.items.debug.LineDrawer;
 import dev.sl4sh.feather.items.tools.HammerTool;
+import dev.sl4sh.feather.server.FeatherServer;
 import dev.sl4sh.feather.services.BackService;
 import dev.sl4sh.feather.services.DatabaseService;
 import dev.sl4sh.feather.services.PermissionService;
@@ -20,7 +21,6 @@ import net.minecraft.util.registry.Registry;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-@EventResponder
 public class Feather implements ModInitializer {
 
     public static final String MOD_ID = "feather";
@@ -46,17 +46,6 @@ public class Feather implements ModInitializer {
             new Identifier("feather", "general"),
             () -> new ItemStack(Items.NETHER_STAR));
 
-    @Register
-    public static void register(EventRegistry registry){
-
-        registry.COMMAND_REGISTRATION.register(Feather::registerCommands);
-
-    }
-
-    public static void registerCommands(CommandRegistrationEvent event){
-
-    }
-
     @Override
     public void onInitialize() {
 
@@ -64,8 +53,6 @@ public class Feather implements ModInitializer {
 
         Registry.register(Registry.ITEM, new Identifier("feather", "hammer"), HAMMER_TOOL);
         Registry.register(Registry.ITEM, new Identifier("feather", "line_drawer"), LINE_DRAWER);
-
-        System.out.println(new Gson().toJson(getPermissionService().getGroups()));
 
     }
 

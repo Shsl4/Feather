@@ -17,7 +17,7 @@ public class CommandExecutionEvent extends CancellableEvent{
         int index = fullCommand.indexOf(" ") - 1;
 
         if (index < 0){
-            index = fullCommand.length() - 1    ;
+            index = fullCommand.length() - 1;
         }
 
         this.commandName = fullCommand.replace("/", "").substring(0, index);

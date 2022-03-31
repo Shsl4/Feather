@@ -8,6 +8,7 @@
     "EntitySelectorMixin",
     "ItemMixin",
     "ItemStackMixin",
+    "MinecraftServerMixin",
     "ServerPlayerInteractionManagerMixin"
   ],
   "client": [

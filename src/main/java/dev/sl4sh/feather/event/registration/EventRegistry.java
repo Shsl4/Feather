@@ -1,5 +1,6 @@
 package dev.sl4sh.feather.event.registration;
 
+import dev.sl4sh.feather.Service;
 import dev.sl4sh.feather.event.*;
 import dev.sl4sh.feather.event.client.ClientDisconnectEvent;
 import dev.sl4sh.feather.event.player.*;
@@ -11,7 +12,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Set;
 
-public class EventRegistry {
+public class EventRegistry implements Service {
 
     private static boolean initialized = false;
 
@@ -34,38 +35,25 @@ public class EventRegistry {
     public EventRegistry() {
 
         if(initialized){
-            throw new IllegalStateException("There should not be more than one instance of EventManager.");
-        }
-
-        Reflections reflections = new Reflections("dev.sl4sh.feather");
-        Set<Class<?>> subTypes = reflections.getTypesAnnotatedWith(EventResponder.class);
-
-        for (Class<?> cl : subTypes){
-
-            for (Method m : cl.getMethods()){
-
-                if(m.isAnnotationPresent(Register.class)){
-
-                    assert Modifier.isStatic(m.getModifiers()) &&
-                            Modifier.isPublic(m.getModifiers()) &&
-                            m.getReturnType() == Void.class &&
-                            m.getParameterTypes().length == 1 &&
-                            m.getParameterTypes()[0].getSuperclass() == FeatherEvent.class;
-
-                    try {
-                        m.invoke(null, this);
-                    } catch (IllegalAccessException | InvocationTargetException e) {
-                        assert false;
-                    }
-
-                }
-
-            }
-
+            throw new IllegalStateException("There should not be more than one instance of EventRegistry.");
         }
 
         initialized = true;
 
     }
 
+    @Override
+    public void loadConfiguration() {
+
+    }
+
+    @Override
+    public void writeConfiguration() {
+
+    }
+
+    @Override
+    public boolean getServiceState() {
+        return false;
+    }
 }

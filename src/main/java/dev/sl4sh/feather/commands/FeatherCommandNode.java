@@ -11,6 +11,7 @@ import net.minecraft.server.command.ServerCommandSource;
 import java.util.function.Predicate;
 
 public class FeatherCommandNode extends LiteralCommandNode<ServerCommandSource> {
+
     public FeatherCommandNode(String literal, Command<ServerCommandSource> command, Predicate<ServerCommandSource> requirement, CommandNode<ServerCommandSource> redirect, RedirectModifier<ServerCommandSource> modifier, boolean forks) {
         super(literal, command, requirement, redirect, modifier, forks);
     }

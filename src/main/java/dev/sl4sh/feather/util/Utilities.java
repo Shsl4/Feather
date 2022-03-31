@@ -1,6 +1,7 @@
 package dev.sl4sh.feather.util;
 
 import dev.sl4sh.feather.Permission;
+import net.minecraft.client.util.Session;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -9,6 +10,7 @@ import net.minecraft.text.Text;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.math.Vec3f;
 import net.minecraft.util.math.Vec3i;
+import net.minecraft.world.level.storage.LevelStorage;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -16,8 +18,15 @@ import java.io.IOException;
 import java.io.Writer;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.Executor;
 
 public class Utilities {
+
+    public static boolean createWorld(MinecraftServer server){
+
+        return false;
+
+    }
 
     public static Writer makeWriter(String path) throws IOException {
 

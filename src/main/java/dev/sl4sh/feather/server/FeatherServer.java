@@ -6,40 +6,59 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
+import com.mojang.serialization.Lifecycle;
 import dev.sl4sh.feather.Feather;
+import dev.sl4sh.feather.MinecraftServerInterface;
+import dev.sl4sh.feather.commands.CommandProcessor;
 import dev.sl4sh.feather.event.CommandRegistrationEvent;
 import dev.sl4sh.feather.event.player.*;
 import dev.sl4sh.feather.event.registration.EventRegistry;
-import dev.sl4sh.feather.event.registration.EventResponder;
-import dev.sl4sh.feather.event.registration.Register;
 import dev.sl4sh.feather.Permission;
+import dev.sl4sh.feather.mixin.MinecraftServerMixin;
 import dev.sl4sh.feather.util.Utilities;
 import net.fabricmc.api.DedicatedServerModInitializer;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.command.CommandSource;
 import net.minecraft.command.argument.GameProfileArgumentType;
+import net.minecraft.resource.DataPackSettings;
 import net.minecraft.server.PlayerManager;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.Text;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.registry.DynamicRegistryManager;
+import net.minecraft.util.registry.Registry;
+import net.minecraft.util.registry.SimpleRegistry;
+import net.minecraft.world.Difficulty;
+import net.minecraft.world.GameMode;
+import net.minecraft.world.GameRules;
+import net.minecraft.world.World;
+import net.minecraft.world.biome.Biome;
+import net.minecraft.world.dimension.DimensionOptions;
+import net.minecraft.world.dimension.DimensionType;
+import net.minecraft.world.gen.GeneratorOptions;
+import net.minecraft.world.level.LevelInfo;
+import net.minecraft.world.level.LevelProperties;
+import net.minecraft.world.level.ServerWorldProperties;
 
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
-@EventResponder
 @Environment(EnvType.SERVER)
 public class FeatherServer implements DedicatedServerModInitializer {
 
     @Override
     public void onInitializeServer() {
 
+        FeatherServer.register(Feather.getEventRegistry());
+        CommandProcessor.register(Feather.getEventRegistry());
+
     }
 
-    @Register
     public static void register(EventRegistry registry) {
 
         registry.POST_CONNECT.register(FeatherServer::onConnect);
@@ -61,6 +80,17 @@ public class FeatherServer implements DedicatedServerModInitializer {
 
         for (Permission.Group group : Feather.getPermissionService().getGroups()) {
             suggestions.add(group.getName());
+        }
+
+        return CommandSource.suggestMatching(suggestions, builder);
+
+    });
+    public static final SuggestionProvider<ServerCommandSource> DIMENSION_SUGGESTION = ((context, builder) -> {
+
+        List<String> suggestions = new ArrayList<>();
+
+        for (ServerWorld world : context.getSource().getServer().getWorlds()) {
+            suggestions.add(Utilities.getWorldDimensionName(world));
         }
 
         return CommandSource.suggestMatching(suggestions, builder);
@@ -244,7 +274,6 @@ public class FeatherServer implements DedicatedServerModInitializer {
         return 0;
 
     }
-
 
     private static int setPlayerPermission(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
 
@@ -457,6 +486,45 @@ public class FeatherServer implements DedicatedServerModInitializer {
                     return 0;
 
                 }));
+
+        event.register(CommandManager.literal("break")
+                .executes(context -> {
+
+                    try{
+
+                        ((MinecraftServerInterface)context.getSource().getServer()).createWorld();
+
+                    }
+                    catch (Exception e){
+                        e.printStackTrace();
+                    }
+                    return 0;
+
+                }));
+
+        event.register(CommandManager.literal("travel")
+                .then(CommandManager.argument("dimension", StringArgumentType.string()).suggests(DIMENSION_SUGGESTION)
+                        .executes(context -> {
+
+                            ServerPlayerEntity player = context.getSource().getPlayer();
+                            String dimension = StringArgumentType.getString(context, "dimension");
+                            Optional<ServerWorld> world = Utilities.getWorldByName(context.getSource().getServer(), dimension);
+
+                            if (world.isPresent()){
+
+                                BlockPos pos = world.get().getSpawnPos();
+                                player.teleport(world.get(), pos.getX(), pos.getY(), pos.getZ(), world.get().getSpawnAngle(), 0.0f);
+
+                            }
+                            else {
+
+                                Utilities.sendError(context.getSource(), "The dimension you're trying to travel to does not exist.");
+
+                            }
+
+                            return 0;
+
+                        })));
 
     }
 

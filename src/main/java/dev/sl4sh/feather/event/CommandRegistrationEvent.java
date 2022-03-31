@@ -11,7 +11,6 @@ public class CommandRegistrationEvent implements FeatherEvent {
     private final FeatherCommandDispatcher dispatcher;
     private final CommandManager.RegistrationEnvironment environment;
 
-
     public CommandRegistrationEvent(FeatherCommandDispatcher dispatcher, CommandManager.RegistrationEnvironment environment) {
         this.dispatcher = dispatcher;
         this.environment = environment;
