@@ -5,11 +5,13 @@
   "compatibilityLevel": "JAVA_16",
   "mixinPriority": -50,
   "mixins": [
+    "DimensionTypeMixin",
     "EntitySelectorMixin",
     "ItemMixin",
     "ItemStackMixin",
     "MinecraftServerMixin",
-    "ServerPlayerInteractionManagerMixin"
+    "ServerPlayerInteractionManagerMixin",
+    "ServerWorldMixin"
   ],
   "client": [
     "DebugRendererMixin",

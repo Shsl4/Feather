@@ -5,12 +5,6 @@ import dev.sl4sh.feather.event.*;
 import dev.sl4sh.feather.event.client.ClientDisconnectEvent;
 import dev.sl4sh.feather.event.player.*;
 import dev.sl4sh.feather.event.world.WorldDebugRenderEvent;
-import org.reflections.Reflections;
-
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.util.Set;
 
 public class EventRegistry implements Service {
 

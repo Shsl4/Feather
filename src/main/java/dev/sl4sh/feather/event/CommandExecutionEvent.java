@@ -14,6 +14,11 @@ public class CommandExecutionEvent extends CancellableEvent{
         this.fullCommand = fullCommand;
         this.source = source;
 
+        if (fullCommand.length() == 0){
+            this.commandName = "";
+            return;
+        }
+
         int index = fullCommand.indexOf(" ") - 1;
 
         if (index < 0){

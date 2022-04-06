@@ -44,6 +44,7 @@ import net.minecraft.world.level.LevelInfo;
 import net.minecraft.world.level.LevelProperties;
 import net.minecraft.world.level.ServerWorldProperties;
 
+import java.io.IOException;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -487,20 +488,28 @@ public class FeatherServer implements DedicatedServerModInitializer {
 
                 }));
 
-        event.register(CommandManager.literal("break")
+        event.register(CommandManager.literal("create")
                 .executes(context -> {
 
-                    try{
-
-                        ((MinecraftServerInterface)context.getSource().getServer()).createWorld();
-
-                    }
-                    catch (Exception e){
+                    try {
+                        ((MinecraftServerInterface)context.getSource().getServer()).deleteWorld("");
+                    } catch (IOException e) {
                         e.printStackTrace();
                     }
                     return 0;
 
                 }));
+
+        event.register(CommandManager.literal("load")
+                        .then(CommandManager.argument("name", StringArgumentType.word())
+                                .executes(context -> {
+
+                                    String name = StringArgumentType.getString(context, "name");
+                                    ((MinecraftServerInterface)context.getSource().getServer()).loadWorld(name);
+                                    return 0;
+
+                                })));
+
 
         event.register(CommandManager.literal("travel")
                 .then(CommandManager.argument("dimension", StringArgumentType.string()).suggests(DIMENSION_SUGGESTION)
