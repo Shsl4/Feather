@@ -35,7 +35,9 @@ import net.minecraft.world.gen.GeneratorOptions;
 import net.minecraft.world.gen.chunk.ChunkGenerator;
 import net.minecraft.world.gen.chunk.FlatChunkGenerator;
 import net.minecraft.world.gen.chunk.FlatChunkGeneratorConfig;
+import net.minecraft.world.gen.feature.ConfiguredFeature;
 import net.minecraft.world.gen.feature.ConfiguredStructureFeature;
+import net.minecraft.world.gen.feature.PlacedFeature;
 import net.minecraft.world.gen.feature.StructureFeature;
 import net.minecraft.world.level.LevelInfo;
 import net.minecraft.world.level.LevelProperties;
@@ -213,13 +215,16 @@ public abstract class MinecraftServerMixin implements MinecraftServerInterface {
 
             FeatherRegistry<Biome> biomeRegistry = FeatherRegistry.from(manager, Registry.BIOME_KEY);
             FeatherRegistry<StructureSet> structureRegistry = new FeatherRegistry<>(Registry.STRUCTURE_SET_KEY, Lifecycle.stable());
+            FeatherRegistry<PlacedFeature> placedFeatureRegistry = new FeatherRegistry<>(Registry.PLACED_FEATURE_KEY, Lifecycle.stable());
+            FeatherRegistry<ConfiguredFeature<?, ?>> confFeatureRegistry = FeatherRegistry.from(manager, Registry.CONFIGURED_FEATURE_KEY);
 
             Map<RegistryKey<? extends Registry<?>>, Registry<?>> map = new HashMap<>();
 
-            map.put(Registry.PLACED_FEATURE_KEY, FeatherRegistry.from(manager, Registry.PLACED_FEATURE_KEY));
+            map.put(Registry.PLACED_FEATURE_KEY, placedFeatureRegistry);
             map.put(Registry.CONFIGURED_STRUCTURE_FEATURE_KEY, FeatherRegistry.from(manager, Registry.CONFIGURED_STRUCTURE_FEATURE_KEY));
             map.put(Registry.STRUCTURE_FEATURE_KEY, FeatherRegistry.from(manager, Registry.STRUCTURE_FEATURE_KEY));
             map.put(Registry.CONFIGURED_CARVER_KEY, FeatherRegistry.from(manager, Registry.CONFIGURED_CARVER_KEY));
+            map.put(Registry.NOISE_WORLDGEN, FeatherRegistry.from(manager, Registry.NOISE_WORLDGEN));
 
             map.put(Registry.WORLD_KEY, worldRegistry);
             map.put(Registry.DIMENSION_TYPE_KEY, dimensionRegistry);
@@ -228,6 +233,18 @@ public abstract class MinecraftServerMixin implements MinecraftServerInterface {
             map.put(Registry.STRUCTURE_SET_KEY, structureRegistry);
 
             DynamicRegistryManager regManager = new DynamicRegistryManager.ImmutableImpl(map);
+
+            Registry<PlacedFeature> placedFeatures = this.registryManager.get(Registry.PLACED_FEATURE_KEY);
+            List<RegistryEntry.Reference<PlacedFeature>> list = placedFeatures.streamEntries().toList();
+            for (RegistryEntry.Reference<PlacedFeature> feature : list){
+                placedFeatureRegistry.add(feature.registryKey(),
+                        new PlacedFeature(confFeatureRegistry.getEntry(feature.value().feature().getKey().get()).get(),
+                                feature.value().placementModifiers()),
+                        Lifecycle.stable());
+            }
+
+            PlacedFeature f = placedFeatureRegistry.get(new Identifier("minecraft:freeze_top_layer"));
+
             /*
             Biome voidBiome = biomeRegistry.get(Identifier.tryParse("minecraft:the_void"));
 
@@ -290,7 +307,6 @@ public abstract class MinecraftServerMixin implements MinecraftServerInterface {
             ServerWorldInterface worldInterface = Utilities.as(world);
             worldInterface.setRegistryManager(regManager);
             this.worlds.put(key, world);
-
 
             worldRegistry.add(RegistryKey.of(Registry.WORLD_KEY, new Identifier("void")), world, Lifecycle.stable());
 

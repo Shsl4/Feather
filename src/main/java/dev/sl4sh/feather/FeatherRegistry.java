@@ -14,12 +14,12 @@ import java.util.stream.Stream;
 
 public class FeatherRegistry<T> extends MutableRegistry<T> {
 
-    class Data{
+    public class Data{
 
-        private final int rawId;
-        private final RegistryKey<T> key;
-        private final RegistryEntry<T> entry;
-        private final T value;
+        public final int rawId;
+        public final RegistryKey<T> key;
+        public final RegistryEntry<T> entry;
+        public final T value;
 
         Data(int rawId, RegistryKey<T> key, RegistryEntry<T> entry, T value) {
             this.rawId = rawId;
@@ -28,6 +28,10 @@ public class FeatherRegistry<T> extends MutableRegistry<T> {
             this.value = value;
         }
 
+    }
+
+    public List<Data> getDataList() {
+        return dataList;
     }
 
     private final List<Data> dataList = new ArrayList<>();
