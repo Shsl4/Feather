@@ -2,10 +2,10 @@ package dev.sl4sh.feather;
 
 import com.mojang.datafixers.util.Pair;
 import com.mojang.serialization.Lifecycle;
+import dev.sl4sh.feather.util.Utilities;
 import net.minecraft.tag.TagKey;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.registry.*;
-import net.minecraft.world.gen.feature.ConfiguredStructureFeature;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -17,15 +17,11 @@ public class FeatherRegistry<T> extends MutableRegistry<T> {
     public class Data{
 
         public final int rawId;
-        public final RegistryKey<T> key;
-        public final RegistryEntry<T> entry;
-        public final T value;
+        public final RegistryEntry.Reference<T> ref;
 
-        Data(int rawId, RegistryKey<T> key, RegistryEntry<T> entry, T value) {
+        Data(int rawId, RegistryEntry.Reference<T> entry) {
             this.rawId = rawId;
-            this.key = key;
-            this.entry = entry;
-            this.value = value;
+            this.ref = entry;
         }
 
     }
@@ -71,10 +67,11 @@ public class FeatherRegistry<T> extends MutableRegistry<T> {
             return null;
         }
 
-        RegistryEntry<T> entry = RegistryEntry.of(value);
-        entry.setRegistry(this);
+        RegistryEntry.Reference<T> entry = RegistryEntry.Reference.standAlone(this, key);
+        SetKeyValueInterface<T> entryInterface = Utilities.as(entry);
+        entryInterface.setKeyValue(key, value);
 
-        dataList.add(new Data(rawId, key, entry, value));
+        dataList.add(new Data(rawId, entry));
 
         if (this.nextId <= rawId) {
             this.nextId = rawId + 1;
@@ -85,7 +82,7 @@ public class FeatherRegistry<T> extends MutableRegistry<T> {
     }
 
     public boolean removeEntry(RegistryKey<T> key){
-        return dataList.removeIf(data -> data.key == key);
+        return dataList.removeIf(data -> data.ref.getKey().get() == key);
     }
 
     public boolean containsRawId(int id) {
@@ -121,8 +118,8 @@ public class FeatherRegistry<T> extends MutableRegistry<T> {
 
         for (Data data : dataList){
 
-            if (data.value == value){
-                return data.key.getValue();
+            if (data.ref.value() == value){
+                return data.ref.getKey().get().getValue();
             }
 
         }
@@ -135,8 +132,8 @@ public class FeatherRegistry<T> extends MutableRegistry<T> {
 
         for (Data data : dataList){
 
-            if (data.entry == entry){
-                return Optional.of(data.key);
+            if (data.ref.value() == entry){
+                return data.ref.getKey();
             }
 
         }
@@ -151,7 +148,7 @@ public class FeatherRegistry<T> extends MutableRegistry<T> {
 
         for (Data data : dataList){
 
-            if (data.entry == value){
+            if (data.ref.value() == value){
                 return data.rawId;
             }
 
@@ -169,7 +166,7 @@ public class FeatherRegistry<T> extends MutableRegistry<T> {
             return null;
         }
 
-        return dataList.get(index).value;
+        return dataList.get(index).ref.value();
 
     }
 
@@ -185,8 +182,8 @@ public class FeatherRegistry<T> extends MutableRegistry<T> {
         if (key == null) { return null; }
 
         for (Data data : dataList){
-            if (data.key.getValue().equals(key.getValue())){
-                return data.value;
+            if (data.ref.getKey().get().equals(key)){
+                return data.ref.value();
             }
         }
 
@@ -200,8 +197,8 @@ public class FeatherRegistry<T> extends MutableRegistry<T> {
         if (id == null) { return null; }
 
         for (Data data : dataList){
-            if (data.key.getValue().equals(id)){
-                return data.value;
+            if (data.ref.getKey().get().getValue().equals(id)){
+                return data.ref.value();
             }
         }
 
@@ -224,7 +221,7 @@ public class FeatherRegistry<T> extends MutableRegistry<T> {
         Set<Identifier> ids = new HashSet<>();
 
         for (Data data : dataList){
-            ids.add(data.key.getValue());
+            ids.add(data.ref.getKey().get().getValue());
         }
 
         return ids;
@@ -237,7 +234,7 @@ public class FeatherRegistry<T> extends MutableRegistry<T> {
         Map<RegistryKey<T>, T> map = new HashMap<>();
 
         for (Data data : dataList){
-            map.put(data.key, data.value);
+            map.put(data.ref.getKey().get(), data.ref.value());
         }
 
         return map.entrySet();
@@ -252,7 +249,7 @@ public class FeatherRegistry<T> extends MutableRegistry<T> {
     @Override
     public boolean containsId(Identifier id) {
         for (Data data : dataList){
-            if (data.key.getValue() == id){
+            if (data.ref.getKey().get().getValue() == id){
                 return true;
             }
         }
@@ -263,7 +260,7 @@ public class FeatherRegistry<T> extends MutableRegistry<T> {
     @Override
     public boolean contains(RegistryKey<T> key) {
         for (Data data : dataList){
-            if (data.key.getValue() == key.getValue()){
+            if (data.ref.getKey().get().getValue() == key.getValue()){
                 return true;
             }
         }
@@ -279,7 +276,7 @@ public class FeatherRegistry<T> extends MutableRegistry<T> {
     @Override
     public RegistryEntry<T> getOrCreateEntry(RegistryKey<T> key) {
 
-        return getEntry(key).get();
+        return getEntry(key).orElseThrow(() -> new IllegalAccessError("Tried to access absent value " + key.getValue() + " in registry " + this.getKey().getValue()));
 
     }
 
@@ -298,8 +295,8 @@ public class FeatherRegistry<T> extends MutableRegistry<T> {
 
         for (Data data : dataList){
 
-            if (data.key == key){
-                return Optional.of(data.entry);
+            if (data.ref.getKey().get() == key){
+                return Optional.of(data.ref);
             }
 
         }
@@ -314,7 +311,7 @@ public class FeatherRegistry<T> extends MutableRegistry<T> {
 
         for (Data data : dataList){
 
-            refs.add(RegistryEntry.Reference.standAlone(this, data.key));
+            refs.add(data.ref);
 
         }
 
@@ -363,7 +360,7 @@ public class FeatherRegistry<T> extends MutableRegistry<T> {
         List<T> elements = new ArrayList<>();
 
         for (Data data : dataList){
-            elements.add(data.value);
+            elements.add(data.ref.value());
         }
 
         return elements.iterator();

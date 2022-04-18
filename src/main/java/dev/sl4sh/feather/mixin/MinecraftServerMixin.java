@@ -3,10 +3,7 @@ package dev.sl4sh.feather.mixin;
 import com.google.common.collect.ImmutableList;
 import com.mojang.datafixers.util.Pair;
 import com.mojang.serialization.Lifecycle;
-import dev.sl4sh.feather.Feather;
-import dev.sl4sh.feather.MinecraftServerInterface;
-import dev.sl4sh.feather.FeatherRegistry;
-import dev.sl4sh.feather.ServerWorldInterface;
+import dev.sl4sh.feather.*;
 import dev.sl4sh.feather.util.Utilities;
 import net.minecraft.datafixer.Schemas;
 import net.minecraft.nbt.NbtElement;
@@ -32,6 +29,7 @@ import net.minecraft.world.border.WorldBorderListener;
 import net.minecraft.world.dimension.DimensionOptions;
 import net.minecraft.world.dimension.DimensionType;
 import net.minecraft.world.gen.GeneratorOptions;
+import net.minecraft.world.gen.carver.ConfiguredCarver;
 import net.minecraft.world.gen.chunk.ChunkGenerator;
 import net.minecraft.world.gen.chunk.FlatChunkGenerator;
 import net.minecraft.world.gen.chunk.FlatChunkGeneratorConfig;
@@ -52,6 +50,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.stream.Stream;
 
@@ -124,6 +123,51 @@ public abstract class MinecraftServerMixin implements MinecraftServerInterface {
 
     }
 
+    private SaveLoader.SavePropertiesSupplier loadFromWorld(LevelStorage.Session session) {
+        return (resourceManager, dataPackSettings) -> {
+
+            DynamicRegistryManager manager = getRegistryManager();
+
+            FeatherRegistry<DimensionType> dimensionRegistry = new FeatherRegistry<>(Registry.DIMENSION_TYPE_KEY, Lifecycle.experimental());
+            FeatherRegistry<DimensionOptions> optionsRegistry = new FeatherRegistry<>(Registry.DIMENSION_KEY, Lifecycle.experimental());
+            FeatherRegistry<World> worldRegistry = new FeatherRegistry<>(Registry.WORLD_KEY, Lifecycle.experimental());
+
+            FeatherRegistry<Biome> biomeRegistry = FeatherRegistry.from(manager, Registry.BIOME_KEY);
+            FeatherRegistry<StructureSet> structureRegistry = new FeatherRegistry<>(Registry.STRUCTURE_SET_KEY, Lifecycle.stable());
+            FeatherRegistry<PlacedFeature> placedFeatureRegistry = new FeatherRegistry<>(Registry.PLACED_FEATURE_KEY, Lifecycle.stable());
+            FeatherRegistry<ConfiguredFeature<?, ?>> confFeatureRegistry = new FeatherRegistry<>(Registry.CONFIGURED_FEATURE_KEY, Lifecycle.stable());
+            FeatherRegistry<ConfiguredCarver<?>> confCarverRegistry = new FeatherRegistry<>(Registry.CONFIGURED_CARVER_KEY, Lifecycle.stable());
+
+            Map<RegistryKey<? extends Registry<?>>, MutableRegistry<?>> map = new HashMap<>();
+
+            map.put(Registry.PLACED_FEATURE_KEY, placedFeatureRegistry);
+            map.put(Registry.CONFIGURED_CARVER_KEY, confCarverRegistry);
+            map.put(Registry.CONFIGURED_FEATURE_KEY, confFeatureRegistry);
+            map.put(Registry.CONFIGURED_STRUCTURE_FEATURE_KEY, FeatherRegistry.from(manager, Registry.CONFIGURED_STRUCTURE_FEATURE_KEY));
+            map.put(Registry.STRUCTURE_PROCESSOR_LIST_KEY, FeatherRegistry.from(manager, Registry.STRUCTURE_PROCESSOR_LIST_KEY));
+            map.put(Registry.STRUCTURE_POOL_KEY, FeatherRegistry.from(manager, Registry.STRUCTURE_POOL_KEY));
+            map.put(Registry.CHUNK_GENERATOR_SETTINGS_KEY, FeatherRegistry.from(manager, Registry.CHUNK_GENERATOR_SETTINGS_KEY));
+            map.put(Registry.DENSITY_FUNCTION_KEY, FeatherRegistry.from(manager, Registry.DENSITY_FUNCTION_KEY));
+            map.put(Registry.NOISE_WORLDGEN, FeatherRegistry.from(manager, Registry.NOISE_WORLDGEN));
+
+            map.put(Registry.WORLD_KEY, worldRegistry);
+            map.put(Registry.DIMENSION_TYPE_KEY, dimensionRegistry);
+            map.put(Registry.DIMENSION_KEY, optionsRegistry);
+            map.put(Registry.BIOME_KEY, biomeRegistry);
+            map.put(Registry.STRUCTURE_SET_KEY, structureRegistry);
+
+            dimensionRegistry.add(RegistryKey.of(Registry.DIMENSION_TYPE_KEY, new Identifier("void")), null, Lifecycle.stable());
+
+            DynamicRegistryManager.Mutable regManager = new MutImpl(map);
+            RegistryOps<NbtElement> dynamicOps = RegistryOps.ofLoaded(NbtOps.INSTANCE, regManager, resourceManager);
+            SaveProperties saveProperties = session.readLevelProperties(dynamicOps, dataPackSettings, regManager.getRegistryLifecycle());
+            if (saveProperties == null) {
+                throw new IllegalStateException("Failed to load world");
+            }
+            return Pair.of(saveProperties, new DynamicRegistryManager.ImmutableImpl(map));
+        };
+    }
+
     @Override
     public boolean loadWorld(String name) {
 
@@ -132,7 +176,7 @@ public abstract class MinecraftServerMixin implements MinecraftServerInterface {
             MinecraftServer server = Utilities.as(this);
             LevelStorage storage = new LevelStorage(Path.of("world"), Path.of("world", name, "backups"), Schemas.getFixer());
             LevelStorage.Session session = storage.createSession(name);
-
+            
             File dataPackPath = session.getDirectory(WorldSavePath.DATAPACKS).toFile();
             ResourcePackProvider packProvider = new FileResourcePackProvider(dataPackPath, ResourcePackSource.PACK_SOURCE_WORLD);
             ResourcePackManager resourcePackManager = new ResourcePackManager(ResourceType.SERVER_DATA, new VanillaDataPackProvider(), packProvider);
@@ -141,7 +185,7 @@ public abstract class MinecraftServerMixin implements MinecraftServerInterface {
                     CommandManager.RegistrationEnvironment.DEDICATED, 5, false);
 
             SaveLoader.DataPackSettingsSupplier packSupplier = SaveLoader.DataPackSettingsSupplier.loadFromWorld(session);
-            SaveLoader.SavePropertiesSupplier saveSupplier = SaveLoader.SavePropertiesSupplier.loadFromWorld(session);
+            SaveLoader.SavePropertiesSupplier saveSupplier = loadFromWorld(session);
 
             SaveLoader loader = SaveLoader.ofLoaded(functionLoaderConfig, packSupplier, saveSupplier, Util.getMainWorkerExecutor(), Runnable::run).get();
             SaveProperties properties = loader.saveProperties();
@@ -182,6 +226,7 @@ public abstract class MinecraftServerMixin implements MinecraftServerInterface {
         }
         catch(Exception e){
 
+            e.printStackTrace();
             Feather.getLogger().info("Failed to load world {}!", name);
             return false;
 
@@ -207,7 +252,7 @@ public abstract class MinecraftServerMixin implements MinecraftServerInterface {
 
             LevelStorage storage = new LevelStorage(Path.of("world"), Path.of("world", worldName, "backups"), Schemas.getFixer());
             LevelStorage.Session session = storage.createSession(worldName);
-            DimensionType type2 = DimensionType.create(OptionalLong.empty(), true, true, false, false, 1.0f, false, true, true,true, false, 0, 256, 256, BlockTags.INFINIBURN_OVERWORLD, new Identifier("void"), 1.0f);
+            DimensionType type2 = DimensionType.create(OptionalLong.empty(), true, true, true, true, 1.0f, false, true, true,true, false, 0, 256, 256, BlockTags.INFINIBURN_OVERWORLD, new Identifier("void"), 1.0f);
 
             FeatherRegistry<DimensionType> dimensionRegistry = new FeatherRegistry<>(Registry.DIMENSION_TYPE_KEY, Lifecycle.experimental());
             FeatherRegistry<DimensionOptions> optionsRegistry = new FeatherRegistry<>(Registry.DIMENSION_KEY, Lifecycle.experimental());
@@ -216,14 +261,15 @@ public abstract class MinecraftServerMixin implements MinecraftServerInterface {
             FeatherRegistry<Biome> biomeRegistry = FeatherRegistry.from(manager, Registry.BIOME_KEY);
             FeatherRegistry<StructureSet> structureRegistry = new FeatherRegistry<>(Registry.STRUCTURE_SET_KEY, Lifecycle.stable());
             FeatherRegistry<PlacedFeature> placedFeatureRegistry = new FeatherRegistry<>(Registry.PLACED_FEATURE_KEY, Lifecycle.stable());
-            FeatherRegistry<ConfiguredFeature<?, ?>> confFeatureRegistry = FeatherRegistry.from(manager, Registry.CONFIGURED_FEATURE_KEY);
+            FeatherRegistry<ConfiguredFeature<?, ?>> confFeatureRegistry = new FeatherRegistry<>(Registry.CONFIGURED_FEATURE_KEY, Lifecycle.stable());
+            FeatherRegistry<ConfiguredCarver<?>> confCarverRegistry = new FeatherRegistry<>(Registry.CONFIGURED_CARVER_KEY, Lifecycle.stable());
 
             Map<RegistryKey<? extends Registry<?>>, Registry<?>> map = new HashMap<>();
 
             map.put(Registry.PLACED_FEATURE_KEY, placedFeatureRegistry);
             map.put(Registry.CONFIGURED_STRUCTURE_FEATURE_KEY, FeatherRegistry.from(manager, Registry.CONFIGURED_STRUCTURE_FEATURE_KEY));
-            map.put(Registry.STRUCTURE_FEATURE_KEY, FeatherRegistry.from(manager, Registry.STRUCTURE_FEATURE_KEY));
-            map.put(Registry.CONFIGURED_CARVER_KEY, FeatherRegistry.from(manager, Registry.CONFIGURED_CARVER_KEY));
+            map.put(Registry.STRUCTURE_FEATURE_KEY, confFeatureRegistry);
+            map.put(Registry.CONFIGURED_CARVER_KEY, confCarverRegistry);
             map.put(Registry.NOISE_WORLDGEN, FeatherRegistry.from(manager, Registry.NOISE_WORLDGEN));
 
             map.put(Registry.WORLD_KEY, worldRegistry);
@@ -234,14 +280,27 @@ public abstract class MinecraftServerMixin implements MinecraftServerInterface {
 
             DynamicRegistryManager regManager = new DynamicRegistryManager.ImmutableImpl(map);
 
+            Registry<ConfiguredCarver<?>> regg = this.registryManager.get(Registry.CONFIGURED_CARVER_KEY);
+            List<RegistryEntry.Reference<ConfiguredCarver<?>>> list3 = regg.streamEntries().toList();
+            for (RegistryEntry.Reference<ConfiguredCarver<?>> ref : list3){
+                confCarverRegistry.add(RegistryKey.of(confCarverRegistry.getKey(), ref.getKey().get().getValue()), ref.value(), Lifecycle.stable());
+            }
+
+            Registry<ConfiguredFeature<?, ?>> confFeatures = this.registryManager.get(Registry.CONFIGURED_FEATURE_KEY);
+            List<RegistryEntry.Reference<ConfiguredFeature<?, ?>>> list2 = confFeatures.streamEntries().toList();
+            for (RegistryEntry.Reference<ConfiguredFeature<?, ?>> ref : list2){
+                confFeatureRegistry.add(RegistryKey.of(confFeatureRegistry.getKey(), ref.getKey().get().getValue()), ref.value(), Lifecycle.stable());
+            }
+
             Registry<PlacedFeature> placedFeatures = this.registryManager.get(Registry.PLACED_FEATURE_KEY);
             List<RegistryEntry.Reference<PlacedFeature>> list = placedFeatures.streamEntries().toList();
             for (RegistryEntry.Reference<PlacedFeature> feature : list){
-                placedFeatureRegistry.add(feature.registryKey(),
+                placedFeatureRegistry.add(RegistryKey.of(placedFeatureRegistry.getKey(), feature.getKey().get().getValue()),
                         new PlacedFeature(confFeatureRegistry.getEntry(feature.value().feature().getKey().get()).get(),
                                 feature.value().placementModifiers()),
                         Lifecycle.stable());
             }
+
 
             PlacedFeature f = placedFeatureRegistry.get(new Identifier("minecraft:freeze_top_layer"));
 
@@ -321,8 +380,6 @@ public abstract class MinecraftServerMixin implements MinecraftServerInterface {
         catch (Exception e){
             e.printStackTrace();
         }
-
-
 
         return true;
     }
